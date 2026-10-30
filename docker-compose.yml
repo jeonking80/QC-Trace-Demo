@@ -20,7 +20,7 @@ services:
     build: .
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__QcTrace: "Server=db,1433;Database=master;User Id=sa;Password=${MSSQL_SA_PASSWORD:-QcTrace!Dev2026};TrustServerCertificate=True;Encrypt=True"
+      ConnectionStrings__QcTrace: "Server=db,1433;Database=QcTrace;User Id=sa;Password=${MSSQL_SA_PASSWORD:-QcTrace!Dev2026};TrustServerCertificate=True;Encrypt=True"
     ports:
       - "8080:8080"
     depends_on:

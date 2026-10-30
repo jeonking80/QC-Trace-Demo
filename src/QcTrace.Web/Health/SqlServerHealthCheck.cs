@@ -5,6 +5,7 @@ namespace QcTrace.Web.Health;
 
 /// <summary>
 /// ConnectionStrings:QcTrace로 SQL Server에 접속해 SELECT 1을 실행한다.
+/// DB가 꺼져 있을 때 기본 연결 타임아웃(15초)까지 기다리지 않도록 3초로 줄인다.
 /// </summary>
 public sealed class SqlServerHealthCheck(IConfiguration configuration) : IHealthCheck
 {
@@ -19,7 +20,8 @@ public sealed class SqlServerHealthCheck(IConfiguration configuration) : IHealth
 
         try
         {
-            await using var connection = new SqlConnection(connectionString);
+            var builder = new SqlConnectionStringBuilder(connectionString) { ConnectTimeout = 3 };
+            await using var connection = new SqlConnection(builder.ConnectionString);
             await connection.OpenAsync(cancellationToken);
             await using var command = new SqlCommand("SELECT 1", connection);
             await command.ExecuteScalarAsync(cancellationToken);

@@ -128,13 +128,13 @@ Oct 30, 2026 · @사장
 | Items | 품목 기준정보 | ItemCode, Name, Spec, IsActive |
 | InspectionItems | 품목별 검사 항목 | ItemId, Name, Lower, Upper, Unit |
 | Users / Roles | 사용자·역할 (Identity) | UserName, Role (생산·검사·승인·출하·관리자) |
-| Lots | 생산 LOT 현재 상태 | LotNo, ItemId, ProducedQty, Status, RowVersion |
+| Lots | 생산 LOT 현재 상태 | LotNo, ItemId, ProducedQty, Status, InspectionRequestedAt, RowVersion |
 | LotQuantities | LOT별 수량 지표 | LotId, Uninspected, Passed, Failed, Held, Shipped, Reserved |
-| Inspections | 검사 실적 (추가만) | LotId, InspectorId, Qty, Verdict, MeasuredJson, Reason, CreatedAt |
+| Inspections | 검사 실적 (추가만) | LotId, InspectorId, Qty, Verdict, MeasuredJson, Reason, CorrectsInspectionId, CreatedAt |
 | ShipmentApprovals | 출하 승인 (추가만) | LotId, ApproverId, ApprovedQty, Decision, Reason, CreatedAt |
 | Shipments | 출하 실적 (추가만) | LotId, ShipperId, Qty, Destination, CreatedAt |
 | Ledger | 불변 원장 | LotId, Kind, DeltaField, Delta, ActorId, Reason, SourceTable, SourceId, CreatedAt |
-| QcRequests | 멱등 요청 저장 | RequestKey (unique), BodyHash, ResponseJson, CreatedAt |
+| QcRequests | 멱등 요청 저장 | RequestKey (unique), Operation, BodyHash, ResponseJson, CreatedAt |
 
 **설계 원칙**
 
@@ -142,6 +142,10 @@ Oct 30, 2026 · @사장
 - `Inspections`·`ShipmentApprovals`·`Shipments`·`Ledger`는 UPDATE·DELETE를 트리거로 거부합니다. 정정은 새 행 + 원 행 참조로 기록합니다.
 - `Lots.RowVersion`으로 낙관적 잠금, 저장 프로시저 안에서는 `UPDLOCK`으로 LOT 행 잠금을 겹쳐 씁니다.
 - 시각은 UTC로 저장하고 화면에서 한국 시간으로 표시합니다.
+- `Lots.InspectionRequestedAt`은 검사 의뢰 시각입니다. 검사 지연(48시간 초과) 판단의 기준입니다.
+- `Inspections.CorrectsInspectionId`는 정정 행이 가리키는 원래 검사 행입니다. 원 행은 그대로 남습니다.
+- `QcRequests.Operation`은 요청 종류(검사·승인·출하)입니다. 같은 키가 다른 작업에 쓰였는지 구분합니다.
+- 출하 승인은 `Reserved`(출하 예약)를 늘리고, 출하는 `Reserved`를 줄인 만큼 `Shipped`를 늘립니다. 그래서 출하 가능 = 합격 − 출하 완료 − 출하 예약이 승인 전후 모두 성립합니다.
 
 **시드 데이터**
 
