@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using QcTrace.Web.Auth;
 using QcTrace.Web.Data;
 using QcTrace.Web.Data.Entities;
 
@@ -8,7 +9,7 @@ public static class LotEndpoints
 {
     public static IEndpointRouteBuilder MapLotEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/lots");
+        var group = app.MapGroup("/api/lots").RequireAuthorization(Policies.AnyRole);
 
         // LOT 목록과 수량 지표 (조회 전용). status로 필터할 수 있다. 예: /api/lots?status=Waiting
         group.MapGet("/", async (string? status, QcTraceDbContext db) =>

@@ -1,0 +1,12 @@
+@page
+@model QcTrace.Web.Pages.StatusModel
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="text-center mt-5">
+    <h1 class="display-6">@Model.Code</h1>
+    <p class="lead">@Model.Title</p>
+    <p class="text-muted">@Model.Message</p>
+    <a class="btn btn-outline-secondary" href="/">처음 화면으로</a>
+</div>

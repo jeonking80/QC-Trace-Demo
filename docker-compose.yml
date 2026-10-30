@@ -20,12 +20,16 @@ services:
     build: .
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+      DataProtection__KeysPath: /app/keys
       ConnectionStrings__QcTrace: "Server=db,1433;Database=QcTrace;User Id=sa;Password=${MSSQL_SA_PASSWORD:-QcTrace!Dev2026};TrustServerCertificate=True;Encrypt=True"
     ports:
       - "8080:8080"
+    volumes:
+      - dp-keys:/app/keys
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
   mssql-data:
+  dp-keys:

@@ -23,7 +23,8 @@ public static class Roles
 /// </summary>
 public static class DbSeeder
 {
-    private static readonly (string UserName, string DisplayName, string Role)[] DemoUsers =
+    // Role이 null인 계정은 역할 없는 사용자의 403 확인용이다
+    private static readonly (string UserName, string DisplayName, string? Role)[] DemoUsers =
     [
         ("admin", "관리자", Roles.Admin),
         ("producer", "생산 담당", Roles.Producer),
@@ -31,6 +32,7 @@ public static class DbSeeder
         ("inspector2", "검사자 2", Roles.Inspector),
         ("approver", "승인권자", Roles.Approver),
         ("shipper", "출하 담당", Roles.Shipper),
+        ("norole", "역할 없음 (권한 확인용)", null),
     ];
 
     public static async Task SeedAsync(IServiceProvider services, IConfiguration configuration, ILogger logger)
@@ -54,7 +56,10 @@ public static class DbSeeder
 
             var user = new AppUser { UserName = userName, DisplayName = displayName, EmailConfirmed = true };
             Check(await userManager.CreateAsync(user, password), $"사용자 {userName}");
-            Check(await userManager.AddToRoleAsync(user, role), $"사용자 {userName} 역할");
+            if (role is not null)
+            {
+                Check(await userManager.AddToRoleAsync(user, role), $"사용자 {userName} 역할");
+            }
         }
 
         if (await db.Lots.AnyAsync())

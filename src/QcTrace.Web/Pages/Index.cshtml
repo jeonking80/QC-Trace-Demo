@@ -7,5 +7,8 @@
 <div class="text-center">
     <h1 class="display-5">QC Trace</h1>
     <p>제조 LOT 검사·출하 이력 관리 데모입니다. 품목·공정·검사 기준은 모두 가상 데이터입니다.</p>
-    <p><a href="/health">/health</a></p>
+    @if (Model.Roles.Count == 0)
+    {
+        <div class="alert alert-warning d-inline-block">역할이 지정되지 않은 계정입니다. 업무 화면을 쓰려면 관리자에게 역할을 요청하세요.</div>
+    }
 </div>

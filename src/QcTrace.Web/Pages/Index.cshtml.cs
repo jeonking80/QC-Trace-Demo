@@ -1,19 +1,22 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using QcTrace.Web.Auth;
+using QcTrace.Web.Data.Entities;
 
 namespace QcTrace.Web.Pages;
 
-public class IndexModel : PageModel
+public class IndexModel(UserManager<AppUser> userManager) : PageModel
 {
-    private readonly ILogger<IndexModel> _logger;
+    public IList<string> Roles { get; private set; } = [];
 
-    public IndexModel(ILogger<IndexModel> logger)
+    public async Task<IActionResult> OnGetAsync()
     {
-        _logger = logger;
-    }
+        var user = await userManager.GetUserAsync(User);
+        Roles = user is null ? [] : await userManager.GetRolesAsync(user);
 
-    public void OnGet()
-    {
-
+        // 역할이 있으면 역할별 첫 화면으로 보낸다
+        var home = Policies.HomePathFor(Roles);
+        return home == "/" ? Page() : LocalRedirect(home);
     }
 }

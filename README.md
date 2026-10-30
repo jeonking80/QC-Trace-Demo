@@ -23,6 +23,7 @@ docker compose up -d
 - 앱: http://localhost:8080
 - 헬스체크: http://localhost:8080/health
 - 첫 실행 시 마이그레이션과 시드 데이터(품목 5종, LOT 30건)가 자동 적재됩니다.
+- 로그인 쿠키 암호화 키는 `dp-keys` 볼륨에 보관하며, 데모 범위라 키 파일 자체는 암호화하지 않습니다(시작 로그의 `XmlKeyManager` 경고).
 
 ### 데모 계정
 
@@ -31,8 +32,10 @@ docker compose up -d
 | 관리자 | admin | (시드 스크립트 참조) |
 | 생산 담당 | producer | (시드 스크립트 참조) |
 | 검사자 | inspector1 | (시드 스크립트 참조) |
+| 검사자 | inspector2 | (시드 스크립트 참조) |
 | 승인권자 | approver | (시드 스크립트 참조) |
 | 출하 담당 | shipper | (시드 스크립트 참조) |
+| 역할 없음 (권한 확인용) | norole | (시드 스크립트 참조) |
 
 ## 시연 순서
 

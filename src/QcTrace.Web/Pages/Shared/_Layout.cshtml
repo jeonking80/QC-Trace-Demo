@@ -19,10 +19,22 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">홈</a>
-                        </li>
+                        @* 메뉴는 역할에 맞는 것만 보인다. 실제 접근 제한은 서버 정책(Auth/Policies.cs)이 한다. *@
+                        @foreach (var (path, label, role) in Menu)
+                        {
+                            if (User.IsInRole(role))
+                            {
+                                <li class="nav-item"><a class="nav-link text-dark" href="@path">@label</a></li>
+                            }
+                        }
                     </ul>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <form method="post" asp-page="/Account/Logout" class="d-flex align-items-center gap-2">
+                            <span class="navbar-text small">@User.Identity.Name</span>
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">로그아웃</button>
+                        </form>
+                    }
                 </div>
             </div>
         </nav>
@@ -46,3 +58,14 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+
+@functions {
+    private static readonly (string Path, string Label, string Role)[] Menu =
+    [
+        ("/Admin", "관리자", QcTrace.Web.Data.Seed.Roles.Admin),
+        ("/Lots", "LOT", QcTrace.Web.Data.Seed.Roles.Producer),
+        ("/Inspections", "검사", QcTrace.Web.Data.Seed.Roles.Inspector),
+        ("/Approvals", "출하 승인", QcTrace.Web.Data.Seed.Roles.Approver),
+        ("/Shipments", "출하", QcTrace.Web.Data.Seed.Roles.Shipper),
+    ];
+}

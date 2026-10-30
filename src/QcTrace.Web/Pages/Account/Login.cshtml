@@ -1,0 +1,25 @@
+@page
+@model QcTrace.Web.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "로그인";
+}
+
+<div class="row justify-content-center">
+    <div class="col-sm-8 col-md-5">
+        <h1 class="h3 mb-3">로그인</h1>
+        <form method="post">
+            <div asp-validation-summary="All" class="text-danger mb-2"></div>
+            <input type="hidden" asp-for="ReturnUrl" />
+            <div class="mb-3">
+                <label asp-for="UserName" class="form-label">아이디</label>
+                <input asp-for="UserName" class="form-control" autocomplete="username" autofocus />
+            </div>
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label">비밀번호</label>
+                <input asp-for="Password" class="form-control" autocomplete="current-password" />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">로그인</button>
+        </form>
+        <p class="text-muted small mt-3">데모 계정은 README를 참고하세요. 모든 데이터는 가상입니다.</p>
+    </div>
+</div>
