@@ -28,6 +28,7 @@ builder.Services.AddRazorPages(options =>
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddSingleton<QcCommands>();
+builder.Services.AddScoped<MasterData>();
 
 // Razor 출력에서 한글을 &#x...; 문자 참조로 바꾸지 않는다
 builder.Services.Configure<WebEncoderOptions>(options =>

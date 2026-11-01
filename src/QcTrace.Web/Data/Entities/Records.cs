@@ -100,3 +100,24 @@ public class QcRequest
     public string? ResponseJson { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+
+public static class RoleChangeKind
+{
+    public const string Add = "Add";
+    public const string Remove = "Remove";
+}
+
+/// <summary>
+/// 역할 변경 감사 기록(추가만). R5 독립 승인 등 규칙이 역할에 기대므로 누가·언제·무엇을·왜 바꿨는지 남긴다.
+/// usp_SetUserRoles만 쓴다. 앱 계정은 이 테이블과 UserRoles에 직접 쓸 수 없다.
+/// </summary>
+public class RoleChange
+{
+    public long Id { get; set; }
+    public string UserId { get; set; } = "";
+    public string RoleName { get; set; } = "";
+    public string Change { get; set; } = "";
+    public string ActorId { get; set; } = "";
+    public string Reason { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+}

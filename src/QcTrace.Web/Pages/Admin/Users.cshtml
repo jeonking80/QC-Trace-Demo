@@ -1,0 +1,67 @@
+@page
+@model QcTrace.Web.Pages.Admin.UsersModel
+@using QcTrace.Web.Pages.Admin
+@{
+    ViewData["Title"] = "사용자";
+}
+
+<h1 class="h3">기준정보 · 사용자</h1>
+<p class="small text-muted">역할을 바꾸면 사유와 함께 변경 이력이 남습니다(<a asp-page="./Ledger" asp-route-view="roles">역할 변경 이력</a>). 대상 사용자의 로그인에는 1분 안에 반영됩니다.</p>
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+<table class="table table-sm align-middle">
+    <thead><tr><th>아이디</th><th>이름</th><th>역할 · 변경 사유</th><th>상태</th></tr></thead>
+    <tbody>
+    @foreach (var r in Model.Rows)
+    {
+        <tr>
+            <td>@r.User.UserName</td>
+            <td>@r.User.DisplayName</td>
+            <td>
+                <form method="post" asp-page-handler="Roles" class="d-flex flex-wrap gap-2 align-items-center">
+                    <input type="hidden" name="userId" value="@r.User.Id" />
+                    @foreach (var (role, label) in UsersModel.RoleLabels)
+                    {
+                        var id = $"r-{r.User.Id}-{role}";
+                        <div class="form-check form-check-inline m-0">
+                            <input class="form-check-input" type="checkbox" name="roles" value="@role" id="@id" checked="@r.Roles.Contains(role)" />
+                            <label class="form-check-label small" for="@id">@label</label>
+                        </div>
+                    }
+                    <input name="reason" class="form-control form-control-sm" style="width:12rem" placeholder="변경 사유 (필수)" maxlength="500" required aria-label="변경 사유" />
+                    <button class="btn btn-sm btn-outline-primary" type="submit">역할 저장</button>
+                </form>
+            </td>
+            <td>
+                <form method="post" asp-page-handler="Lock">
+                    <input type="hidden" name="userId" value="@r.User.Id" />
+                    <input type="hidden" name="locked" value="@(r.Locked ? "false" : "true")" />
+                    @if (r.Locked) { <span class="badge text-bg-danger">잠김</span> }
+                    <button class="btn btn-sm btn-outline-secondary" type="submit">@(r.Locked ? "잠금 해제" : "잠그기")</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<div class="card">
+    <div class="card-body">
+        <h2 class="h6">사용자 추가</h2>
+        <form method="post" asp-page-handler="Create" class="row g-2 align-items-center">
+            <div class="col-md-2"><input asp-for="NewUserName" class="form-control form-control-sm" placeholder="아이디" required /></div>
+            <div class="col-md-2"><input asp-for="NewDisplayName" class="form-control form-control-sm" placeholder="이름" required /></div>
+            <div class="col-md-2"><input asp-for="NewPassword" type="password" class="form-control form-control-sm" placeholder="초기 비밀번호" autocomplete="new-password" required /></div>
+            <div class="col-md-4">
+                @foreach (var (role, label) in UsersModel.RoleLabels)
+                {
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" name="NewRoles" value="@role" id="new-@role" />
+                        <label class="form-check-label small" for="new-@role">@label</label>
+                    </div>
+                }
+            </div>
+            <div class="col-md-2 d-grid"><button class="btn btn-sm btn-primary" type="submit">추가</button></div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,88 @@
+@page
+@model QcTrace.Web.Pages.Admin.ReconcileModel
+@using QcTrace.Web.Services
+@using QcTrace.Web.Pages.Admin
+@{
+    ViewData["Title"] = "재고 대사";
+    string Cell(int qty, int ledger) => qty == ledger ? "" : "table-danger";
+}
+
+<h1 class="h3">재고 대사</h1>
+<p class="text-muted small">
+    LOT별로 현재 수량(LotQuantities)과 원장 합, 생산 등식(생산 = 미검사 + 합격 + 불합격 + 보류 + 폐기), 출하 + 예약 ≤ 합격을 확인합니다.
+    판정은 DB 뷰 <code>vw_LotReconciliation</code>이 합니다. 확인 시각 @Kst.Format(Model.CheckedAt)
+</p>
+
+<div class="row g-2 mb-3">
+    <div class="col-md-4">
+        <div class="card @(Model.MismatchCount == 0 ? "border-success" : "border-danger")">
+            <div class="card-body py-2">
+                <div class="small text-muted">불일치</div>
+                <div class="fs-3 @(Model.MismatchCount == 0 ? "text-success" : "text-danger")" id="mismatch-count">@(Model.MismatchCount)건</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-warning">
+            <div class="card-body py-2">
+                <div class="small text-muted">초과 보류 (R9, 생산 수량을 넘겨 검사된 분량)</div>
+                <div class="fs-3 text-warning" id="overage-count">@(Model.OverageCount)건</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body py-2">
+                <div class="small text-muted">정상</div>
+                <div class="fs-3" id="ok-count">@(Model.OkCount)건</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between mb-2">
+    <div>
+        <a class="btn btn-sm @(Model.ShowAll ? "btn-outline-secondary" : "btn-dark")" asp-page="./Reconcile">확인 대상만</a>
+        <a class="btn btn-sm @(Model.ShowAll ? "btn-dark" : "btn-outline-secondary")" asp-page="./Reconcile" asp-route-show="all">전체</a>
+    </div>
+    <a class="btn btn-sm btn-outline-success" asp-page-handler="Csv">CSV 내려받기 (전체)</a>
+</div>
+
+@if (Model.Rows.Count == 0)
+{
+    <p class="text-success">확인할 LOT이 없습니다. 모든 LOT의 수량이 원장과 일치합니다.</p>
+}
+else
+{
+    <table class="table table-sm align-middle">
+        <thead>
+            <tr><th>LOT</th><th>결과</th><th class="text-end">생산</th><th class="text-end">미검사</th><th class="text-end">합격</th><th class="text-end">불합격</th>
+                <th class="text-end">보류</th><th class="text-end">폐기</th><th class="text-end">출하</th><th class="text-end">예약</th>
+                <th class="text-end">등식 차이</th><th class="text-end">초과 보류</th></tr>
+        </thead>
+        <tbody>
+        @foreach (var r in Model.Rows)
+        {
+            <tr class="@(r.State == ReconcileModel.Mismatch ? "table-danger" : r.State == ReconcileModel.OverageHeld ? "table-warning" : "")">
+                <td><a asp-page="./Ledger" asp-route-lotNo="@r.LotNo">@r.LotNo</a><div class="small text-muted">@r.Status</div></td>
+                <td>
+                    <strong>@ReconcileModel.StateLabel(r.State)</strong>
+                    @if (!r.LedgerMatches) { <div class="small">원장 합과 다름</div> }
+                    @if (!r.ShipmentWithinPassed) { <div class="small">출하+예약 &gt; 합격</div> }
+                    @if (r.ProductionDiff != r.OverageQty) { <div class="small">생산 등식 차이 @r.ProductionDiff ≠ 초과 보류 @r.OverageQty</div> }
+                </td>
+                <td class="text-end">@r.ProducedQty</td>
+                <td class="text-end @Cell(r.Uninspected, r.LedgerUninspected)">@r.Uninspected@if (r.Uninspected != r.LedgerUninspected) {<div class="small">원장 @r.LedgerUninspected</div>}</td>
+                <td class="text-end @Cell(r.Passed, r.LedgerPassed)">@r.Passed@if (r.Passed != r.LedgerPassed) {<div class="small">원장 @r.LedgerPassed</div>}</td>
+                <td class="text-end @Cell(r.Failed, r.LedgerFailed)">@r.Failed@if (r.Failed != r.LedgerFailed) {<div class="small">원장 @r.LedgerFailed</div>}</td>
+                <td class="text-end @Cell(r.Held, r.LedgerHeld)">@r.Held@if (r.Held != r.LedgerHeld) {<div class="small">원장 @r.LedgerHeld</div>}</td>
+                <td class="text-end @Cell(r.Scrapped, r.LedgerScrapped)">@r.Scrapped@if (r.Scrapped != r.LedgerScrapped) {<div class="small">원장 @r.LedgerScrapped</div>}</td>
+                <td class="text-end @Cell(r.Shipped, r.LedgerShipped)">@r.Shipped@if (r.Shipped != r.LedgerShipped) {<div class="small">원장 @r.LedgerShipped</div>}</td>
+                <td class="text-end @Cell(r.Reserved, r.LedgerReserved)">@r.Reserved@if (r.Reserved != r.LedgerReserved) {<div class="small">원장 @r.LedgerReserved</div>}</td>
+                <td class="text-end">@(r.ProductionDiff > 0 ? "+" : "")@r.ProductionDiff</td>
+                <td class="text-end">@r.OverageQty</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}

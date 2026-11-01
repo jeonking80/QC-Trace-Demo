@@ -19,6 +19,7 @@ public class QcTraceDbContext(DbContextOptions<QcTraceDbContext> options)
     public DbSet<Shipment> Shipments => Set<Shipment>();
     public DbSet<LedgerEntry> Ledger => Set<LedgerEntry>();
     public DbSet<QcRequest> QcRequests => Set<QcRequest>();
+    public DbSet<RoleChange> RoleChanges => Set<RoleChange>();
 
     private const string UtcNow = "SYSUTCDATETIME()";
 
@@ -179,6 +180,24 @@ public class QcTraceDbContext(DbContextOptions<QcTraceDbContext> options)
             e.HasIndex(x => x.CreatedAt);
             e.HasIndex(x => new { x.ActorId, x.CreatedAt });
             LotFk(e, x => x.LotId);
+            UserFk(e, x => x.ActorId);
+        });
+
+        b.Entity<RoleChange>(e =>
+        {
+            e.ToTable("RoleChanges", t =>
+            {
+                t.HasTrigger(AppendOnlyTriggerName("RoleChanges"));
+                t.HasCheckConstraint("CK_RoleChanges_Change", "[Change] IN ('Add', 'Remove')");
+                t.HasCheckConstraint("CK_RoleChanges_Reason", "LEN(LTRIM(RTRIM([Reason]))) > 0");
+            });
+            e.Property(x => x.RoleName).HasMaxLength(256);
+            e.Property(x => x.Change).HasMaxLength(10);
+            e.Property(x => x.Reason).HasMaxLength(500);
+            e.Property(x => x.CreatedAt).HasDefaultValueSql(UtcNow);
+            e.HasIndex(x => new { x.UserId, x.CreatedAt });
+            e.HasIndex(x => x.CreatedAt);
+            UserFk(e, x => x.UserId);
             UserFk(e, x => x.ActorId);
         });
 

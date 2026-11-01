@@ -1,0 +1,76 @@
+@page
+@model QcTrace.Web.Pages.Admin.ItemsModel
+@{
+    ViewData["Title"] = "기준정보";
+}
+
+<h1 class="h3">기준정보 · 품목</h1>
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+@if (Model.ImportErrors.Count > 0)
+{
+    <div class="alert alert-warning small">
+        <ul class="mb-0">
+            @foreach (var e in Model.ImportErrors.Take(50)) { <li>@e</li> }
+        </ul>
+        @if (Model.ImportErrors.Count > 50) { <div>외 @(Model.ImportErrors.Count - 50)건</div> }
+    </div>
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-5">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h6">품목 추가</h2>
+            <form method="post" asp-page-handler="Add" class="row g-2">
+                <div class="col-4"><input asp-for="NewCode" class="form-control form-control-sm" placeholder="품목 코드" maxlength="20" required /></div>
+                <div class="col-8"><input asp-for="NewName" class="form-control form-control-sm" placeholder="품목명" maxlength="100" required /></div>
+                <div class="col-9"><input asp-for="NewSpec" class="form-control form-control-sm" placeholder="규격 설명 (선택)" maxlength="200" /></div>
+                <div class="col-3 d-grid"><button class="btn btn-sm btn-primary" type="submit">추가</button></div>
+            </form>
+        </div></div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h6">CSV</h2>
+            <p class="small text-muted mb-2">
+                내려받은 파일을 고쳐서 다시 올리면 됩니다. 같은 코드는 수정, 새 코드는 추가하고, 지우지는 않습니다(사용 중지는 IsActive=0).
+                오류가 한 줄이라도 있으면 전체를 저장하지 않습니다. UTF-8, 1MB 이하.
+            </p>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+                <a class="btn btn-sm btn-outline-success" asp-page-handler="Export" asp-route-kind="items">품목 CSV 내려받기</a>
+                <a class="btn btn-sm btn-outline-success" asp-page-handler="Export" asp-route-kind="inspection-items">검사 항목 CSV 내려받기</a>
+            </div>
+            <form method="post" asp-page-handler="Import" enctype="multipart/form-data" class="row g-2 align-items-center">
+                <div class="col-sm-4">
+                    <select name="kind" class="form-select form-select-sm" aria-label="CSV 종류">
+                        <option value="items">품목 (ItemCode,Name,Spec,IsActive)</option>
+                        <option value="inspection-items">검사 항목 (ItemCode,Name,Lower,Upper,Unit,SortOrder)</option>
+                    </select>
+                </div>
+                <div class="col-sm-6"><input type="file" name="file" accept=".csv,text/csv" class="form-control form-control-sm" required /></div>
+                <div class="col-sm-2 d-grid"><button class="btn btn-sm btn-primary" type="submit">올리기</button></div>
+            </form>
+        </div></div>
+    </div>
+</div>
+
+<table class="table table-sm align-middle">
+    <thead><tr><th>코드</th><th>품목명</th><th>규격</th><th class="text-end">검사 항목</th><th class="text-end">LOT</th><th>상태</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var r in Model.Rows)
+    {
+        <tr class="@(r.Item.IsActive ? "" : "text-muted")">
+            <td><a asp-page="./Item" asp-route-id="@r.Item.Id">@r.Item.ItemCode</a></td>
+            <td>@r.Item.Name</td>
+            <td class="small">@r.Item.Spec</td>
+            <td class="text-end">@r.InspectionItemCount@if (r.InspectionItemCount == 0) { <span class="badge text-bg-warning ms-1">없음</span> }</td>
+            <td class="text-end">@r.LotCount</td>
+            <td>@(r.Item.IsActive ? "사용" : "사용 중지")</td>
+            <td>
+                <form method="post" asp-page-handler="Toggle" asp-route-id="@r.Item.Id">
+                    <button class="btn btn-sm btn-outline-secondary" type="submit">@(r.Item.IsActive ? "사용 중지" : "다시 사용")</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

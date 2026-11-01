@@ -100,6 +100,8 @@ public sealed class CommandApiTests(SqlServerFixture fixture) : IDisposable
         { "R5",      422, "R5" },
         { "R7",      422, "R7" },
         { "dispose", 422, "dispose_over_failed" },
+        { "R11",     422, "R11" },
+        { "R11missing", 422, "R11" },
     };
 
     [Theory(DisplayName = "SP 오류 번호 → HTTP 상태·errorCode 매핑")]
@@ -155,6 +157,20 @@ public sealed class CommandApiTests(SqlServerFixture fixture) : IDisposable
             case "dispose":
                 await _db.ApplyInspection(Db.Key(), lot, "inspector1", 2, "Fail", reason: "불량");
                 request = Post($"/api/lots/{lot}/dispositions", new { qty = 3, action = "Scrap", reason = "폐기" });
+                break;
+            case "R11":
+                var (specItem, diameter, _) = await fixture.CreateItemWithSpecsAsync();
+                var specLot = await fixture.CreateLotAsync(10, itemId: specItem);
+                request = Post($"/api/lots/{specLot}/inspections", new
+                {
+                    qty = 1, verdict = "Pass",
+                    measuredJson = System.Text.Json.JsonSerializer.Serialize(new[] { new { inspectionItemId = diameter, value = 10.2 } })
+                });
+                break;
+            case "R11missing":
+                var (missingItem, _, _) = await fixture.CreateItemWithSpecsAsync();
+                var missingLot = await fixture.CreateLotAsync(10, itemId: missingItem);
+                request = Post($"/api/lots/{missingLot}/inspections", new { qty = 1, verdict = "Pass" });
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(scenario));

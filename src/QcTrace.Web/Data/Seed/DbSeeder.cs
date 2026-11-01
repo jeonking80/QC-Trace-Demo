@@ -59,7 +59,9 @@ public static class DbSeeder
             Check(await userManager.CreateAsync(user, password), $"사용자 {userName}");
             if (role is not null)
             {
-                Check(await userManager.AddToRoleAsync(user, role), $"사용자 {userName} 역할");
+                // 앱 계정은 UserRoles에 직접 쓸 수 없다(역할 변경은 usp_SetUserRoles로만). 첫 적재만 관리자 연결로 넣는다.
+                await db.Database.ExecuteSqlInterpolatedAsync(
+                    $"INSERT INTO dbo.UserRoles (UserId, RoleId) SELECT {user.Id}, Id FROM dbo.Roles WHERE Name = {role}");
             }
         }
 

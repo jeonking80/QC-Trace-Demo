@@ -202,7 +202,7 @@ BEGIN
     BEGIN
         -- 측정값: 합격·보류는 규격 중앙값, 불합격은 첫 항목을 상한 10% 초과로 기록
         SET @json = (
-            SELECT ii.Name AS name,
+            SELECT ii.Id AS inspectionItemId, ii.Name AS name,
                    CAST(CASE WHEN @verdict = N'Fail' AND ii.SortOrder = 1
                              THEN ii.Upper + (ii.Upper - ii.Lower) * 0.1
                              ELSE (ii.Lower + ii.Upper) / 2 END AS decimal(18, 3)) AS value,

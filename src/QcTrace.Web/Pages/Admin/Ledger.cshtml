@@ -1,0 +1,114 @@
+@page
+@model QcTrace.Web.Pages.Admin.LedgerModel
+@using QcTrace.Web.Services
+@{
+    ViewData["Title"] = "이력 원장";
+    var routes = new Dictionary<string, string?>
+    {
+        ["View"] = Model.View, ["LotNo"] = Model.LotNo, ["ActorId"] = Model.ActorId, ["Kind"] = Model.Kind,
+        ["From"] = Model.From?.ToString("yyyy-MM-dd"), ["To"] = Model.To?.ToString("yyyy-MM-dd"),
+    };
+}
+
+<h1 class="h3">이력 원장</h1>
+<p class="text-muted small">원장은 추가만 되는 기록입니다(R3). 모든 행에 작업자·시각·사유가 있습니다(R10). 시각은 한국 시간입니다.</p>
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link @(Model.IsRoleView ? "" : "active")" asp-page="./Ledger">수량 원장</a></li>
+    <li class="nav-item"><a class="nav-link @(Model.IsRoleView ? "active" : "")" asp-page="./Ledger" asp-route-view="roles">역할 변경 이력</a></li>
+</ul>
+
+<form method="get" class="row g-2 align-items-end mb-3">
+    <input type="hidden" name="View" value="@Model.View" />
+    @if (!Model.IsRoleView)
+    {
+        <div class="col-md-2">
+            <label class="form-label" for="LotNo">LOT 번호</label>
+            <input class="form-control form-control-sm" id="LotNo" name="LotNo" value="@Model.LotNo" placeholder="일부만 입력해도 됨" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" for="Kind">종류</label>
+            <select class="form-select form-select-sm" id="Kind" name="Kind">
+                <option value="">전체</option>
+                @foreach (var (value, label) in QcTrace.Web.Pages.Admin.LedgerModel.Kinds)
+                {
+                    <option value="@value" selected="@(Model.Kind == value)">@label</option>
+                }
+            </select>
+        </div>
+    }
+    <div class="col-md-3">
+        <label class="form-label" for="ActorId">@(Model.IsRoleView ? "사용자(대상 또는 변경자)" : "작업자")</label>
+        <select class="form-select form-select-sm" id="ActorId" name="ActorId">
+            <option value="">전체</option>
+            @foreach (var o in Model.ActorOptions)
+            {
+                <option value="@o.Value" selected="@(Model.ActorId == o.Value)">@o.Text</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label" for="From">시작일</label>
+        <input type="date" class="form-control form-control-sm" id="From" name="From" value="@Model.From?.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col-md-2">
+        <label class="form-label" for="To">종료일</label>
+        <input type="date" class="form-control form-control-sm" id="To" name="To" value="@Model.To?.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col-md-1 d-grid">
+        <button class="btn btn-sm btn-primary" type="submit">조회</button>
+    </div>
+</form>
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <div class="small">
+        @(Model.TotalCount)건
+        @if (Model.TotalCount > QcTrace.Web.Pages.Admin.LedgerModel.ScreenLimit)
+        {
+            <span class="text-muted">· 화면에는 최근 @(QcTrace.Web.Pages.Admin.LedgerModel.ScreenLimit)건만 보입니다. 전체는 CSV로 내려받으세요.</span>
+        }
+    </div>
+    <a class="btn btn-sm btn-outline-success" asp-page-handler="Csv" asp-all-route-data="routes">CSV 내려받기</a>
+</div>
+
+@if (Model.IsRoleView)
+{
+    <table class="table table-sm">
+        <thead><tr><th>시각</th><th>사용자</th><th>역할</th><th>변경</th><th>변경자</th><th>사유</th></tr></thead>
+        <tbody>
+        @foreach (var r in Model.RoleRows)
+        {
+            <tr>
+                <td class="text-nowrap">@Kst.Format(r.CreatedAt)</td>
+                <td>@r.User</td>
+                <td>@r.RoleName</td>
+                <td>@(r.Change == QcTrace.Web.Data.Entities.RoleChangeKind.Add ? "추가" : "제거")</td>
+                <td>@r.Actor</td>
+                <td>@r.Reason</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <table class="table table-sm">
+        <thead><tr><th>시각</th><th>LOT</th><th>종류</th><th>수량 항목</th><th class="text-end">증감</th><th>작업자</th><th>사유</th><th>원본</th></tr></thead>
+        <tbody>
+        @foreach (var r in Model.Rows)
+        {
+            <tr>
+                <td class="text-nowrap">@Kst.Format(r.CreatedAt)</td>
+                <td><a asp-page="./Ledger" asp-route-lotNo="@r.LotNo">@r.LotNo</a></td>
+                <td>@QcTrace.Web.Pages.Admin.LedgerModel.KindLabel(r.Kind)</td>
+                <td>@r.DeltaField</td>
+                <td class="text-end @(r.Delta < 0 ? "text-danger" : "")">@(r.Delta > 0 ? "+" : "")@r.Delta</td>
+                <td>@r.Actor</td>
+                <td>@r.Reason</td>
+                <td class="small text-muted">@r.SourceTable @r.SourceId</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}

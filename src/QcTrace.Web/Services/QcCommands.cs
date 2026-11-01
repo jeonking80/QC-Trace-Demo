@@ -44,6 +44,11 @@ public sealed class QcCommands(IConfiguration configuration)
         ExecAsync("dbo.usp_ShipLot",
             ("@RequestKey", requestKey), ("@LotId", lotId), ("@ShipperId", shipperId), ("@Qty", qty), ("@Destination", destination));
 
+    /// <summary>역할 변경(관리자). roles는 바뀐 뒤의 전체 역할 목록. 바뀐 역할마다 RoleChanges에 기록된다.</summary>
+    public Task<CommandResult> SetUserRolesAsync(string actorId, string userId, IEnumerable<string> roles, string? reason) =>
+        ExecAsync("dbo.usp_SetUserRoles",
+            ("@ActorId", actorId), ("@UserId", userId), ("@Roles", string.Join(",", roles)), ("@Reason", reason));
+
     private async Task<CommandResult> ExecAsync(string procedure, params (string Name, object? Value)[] parameters)
     {
         await using var connection = new SqlConnection(_connectionString);

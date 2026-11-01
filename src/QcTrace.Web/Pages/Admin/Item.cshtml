@@ -1,0 +1,55 @@
+@page "{id:int}"
+@model QcTrace.Web.Pages.Admin.ItemModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "품목 " + Model.Item.ItemCode;
+    string N(decimal d) => d.ToString("0.####", CultureInfo.InvariantCulture);
+}
+
+<p><a asp-page="./Items">← 품목 목록</a></p>
+<h1 class="h3">@Model.Item.ItemCode @(Model.Item.IsActive ? "" : "(사용 중지)")</h1>
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+<form method="post" asp-page-handler="Item" asp-route-id="@Model.Item.Id" class="row g-2 mb-4">
+    <div class="col-md-4"><label class="form-label small" for="name">품목명</label>
+        <input id="name" name="name" value="@Model.Item.Name" class="form-control form-control-sm" maxlength="100" required /></div>
+    <div class="col-md-6"><label class="form-label small" for="spec">규격 설명</label>
+        <input id="spec" name="spec" value="@Model.Item.Spec" class="form-control form-control-sm" maxlength="200" /></div>
+    <div class="col-md-2 d-grid align-items-end"><button class="btn btn-sm btn-primary mt-4" type="submit">저장</button></div>
+</form>
+
+<h2 class="h5">검사 항목</h2>
+<p class="small text-muted">측정값이 하한~상한(경계 포함)을 벗어나면 합격으로 저장할 수 없습니다(R11). 규격을 바꿔도 지난 검사 기록은 그때 규격으로 남습니다.</p>
+<table class="table table-sm align-middle">
+    <thead><tr><th>순서</th><th>항목</th><th>하한</th><th>상한</th><th>단위</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var x in Model.Item.InspectionItems)
+    {
+        <tr>
+            <td colspan="6">
+                <form method="post" asp-page-handler="InspectionItem" asp-route-id="@Model.Item.Id" class="row g-1">
+                    <input type="hidden" name="inspectionItemId" value="@x.Id" />
+                    <div class="col-1"><input name="sortOrder" value="@x.SortOrder" type="number" class="form-control form-control-sm" aria-label="순서" /></div>
+                    <div class="col-3"><input name="name" value="@x.Name" class="form-control form-control-sm" maxlength="50" required aria-label="항목" /></div>
+                    <div class="col-2"><input name="lower" value="@N(x.Lower)" class="form-control form-control-sm" inputmode="decimal" required aria-label="하한" /></div>
+                    <div class="col-2"><input name="upper" value="@N(x.Upper)" class="form-control form-control-sm" inputmode="decimal" required aria-label="상한" /></div>
+                    <div class="col-2"><input name="unit" value="@x.Unit" class="form-control form-control-sm" maxlength="20" aria-label="단위" /></div>
+                    <div class="col-2 d-grid"><button class="btn btn-sm btn-outline-primary" type="submit">수정</button></div>
+                </form>
+            </td>
+        </tr>
+    }
+    <tr class="table-light">
+        <td colspan="6">
+            <form method="post" asp-page-handler="InspectionItem" asp-route-id="@Model.Item.Id" class="row g-1">
+                <div class="col-1"><input name="sortOrder" value="@(Model.Item.InspectionItems.Count + 1)" type="number" class="form-control form-control-sm" aria-label="순서" /></div>
+                <div class="col-3"><input name="name" placeholder="새 검사 항목" class="form-control form-control-sm" maxlength="50" required aria-label="항목" /></div>
+                <div class="col-2"><input name="lower" placeholder="하한" class="form-control form-control-sm" inputmode="decimal" required aria-label="하한" /></div>
+                <div class="col-2"><input name="upper" placeholder="상한" class="form-control form-control-sm" inputmode="decimal" required aria-label="상한" /></div>
+                <div class="col-2"><input name="unit" placeholder="단위" class="form-control form-control-sm" maxlength="20" aria-label="단위" /></div>
+                <div class="col-2 d-grid"><button class="btn btn-sm btn-primary" type="submit">추가</button></div>
+            </form>
+        </td>
+    </tr>
+    </tbody>
+</table>

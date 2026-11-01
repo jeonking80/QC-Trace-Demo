@@ -63,6 +63,8 @@ public sealed class SqlServerFixture : IAsyncLifetime
         ("inspector_approver", ["Inspector", "Approver"]),
         ("shipper", ["Shipper"]),
         ("norole", []),
+        ("admin", ["Admin"]),
+        ("admin2", ["Admin"]),
     ];
 
     private async Task SeedUsersAndItemAsync()
@@ -99,7 +101,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
     /// <summary>
     /// 검사 대기 LOT 하나를 만든다. LOT 등록 SP는 단위 6 범위라 여기서는 관리자 연결로 직접 넣는다(Ledger Produce 포함).
     /// </summary>
-    public async Task<int> CreateLotAsync(int producedQty, string status = "Waiting")
+    public async Task<int> CreateLotAsync(int producedQty, string status = "Waiting", int? itemId = null)
     {
         await using var connection = new SqlConnection(AdminConnectionString);
         await connection.OpenAsync();
@@ -117,11 +119,32 @@ public sealed class SqlServerFixture : IAsyncLifetime
             SELECT @id;
             """, connection);
         command.Parameters.AddWithValue("@lotNo", "T-" + Guid.NewGuid().ToString("N")[..20]);
-        command.Parameters.AddWithValue("@itemId", _itemId);
+        command.Parameters.AddWithValue("@itemId", itemId ?? _itemId);
         command.Parameters.AddWithValue("@qty", producedQty);
         command.Parameters.AddWithValue("@producer", UserIds["producer"]);
         command.Parameters.AddWithValue("@status", status);
         return (int)(await command.ExecuteScalarAsync())!;
+    }
+
+    /// <summary>검사 항목 2개(외경 139~141 mm, 길이 49.5~50.5 mm)를 가진 품목을 새로 만든다. 반환: (품목 Id, 외경 Id, 길이 Id)</summary>
+    public async Task<(int ItemId, int DiameterId, int LengthId)> CreateItemWithSpecsAsync()
+    {
+        await using var connection = new SqlConnection(AdminConnectionString);
+        await connection.OpenAsync();
+        await using var command = new SqlCommand("""
+            DECLARE @item int, @d int, @l int;
+            INSERT INTO Items (ItemCode, Name, IsActive) VALUES (@code, N'규격 테스트 품목', 1);
+            SET @item = SCOPE_IDENTITY();
+            INSERT INTO InspectionItems (ItemId, Name, Lower, Upper, Unit, SortOrder) VALUES (@item, N'외경', 139, 141, N'mm', 1);
+            SET @d = SCOPE_IDENTITY();
+            INSERT INTO InspectionItems (ItemId, Name, Lower, Upper, Unit, SortOrder) VALUES (@item, N'길이', 49.5, 50.5, N'mm', 2);
+            SET @l = SCOPE_IDENTITY();
+            SELECT @item, @d, @l;
+            """, connection);
+        command.Parameters.AddWithValue("@code", "SPEC-" + Guid.NewGuid().ToString("N")[..10]);
+        await using var r = await command.ExecuteReaderAsync();
+        await r.ReadAsync();
+        return (r.GetInt32(0), r.GetInt32(1), r.GetInt32(2));
     }
 
     private static async Task Exec(SqlConnection connection, string sql, params (string Name, object Value)[] parameters)

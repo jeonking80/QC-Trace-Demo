@@ -578,6 +578,62 @@ namespace QcTrace.Web.Data.Migrations
                     b.ToTable("QcRequests");
                 });
 
+            modelBuilder.Entity("QcTrace.Web.Data.Entities.RoleChange", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("ActorId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Change")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RoleName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.ToTable("RoleChanges", null, t =>
+                        {
+                            t.HasTrigger("TR_RoleChanges_AppendOnly");
+
+                            t.HasCheckConstraint("CK_RoleChanges_Change", "[Change] IN ('Add', 'Remove')");
+
+                            t.HasCheckConstraint("CK_RoleChanges_Reason", "LEN(LTRIM(RTRIM([Reason]))) > 0");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
             modelBuilder.Entity("QcTrace.Web.Data.Entities.Shipment", b =>
                 {
                     b.Property<long>("Id")
@@ -797,6 +853,21 @@ namespace QcTrace.Web.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Lot");
+                });
+
+            modelBuilder.Entity("QcTrace.Web.Data.Entities.RoleChange", b =>
+                {
+                    b.HasOne("QcTrace.Web.Data.Entities.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("QcTrace.Web.Data.Entities.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("QcTrace.Web.Data.Entities.Shipment", b =>

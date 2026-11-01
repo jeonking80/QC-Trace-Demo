@@ -41,13 +41,15 @@ public class InputModel(QcTraceDbContext db, QcCommands qc) : QcPageModel
 
         var measured = Items.Select(i => new
         {
+            inspectionItemId = i.Id,
             name = i.Name,
-            value = decimal.TryParse(Measured.GetValueOrDefault(i.Id), NumberStyles.Number, CultureInfo.InvariantCulture, out var v) ? v : (decimal?)null,
+            // 숫자가 아닌 값도 버리지 않고 그대로 보내 서버가 API와 같이 50400으로 거절하게 한다
+            value = MeasuredValue(Measured.GetValueOrDefault(i.Id)),
             unit = i.Unit,
             lower = i.Lower,
             upper = i.Upper
         }).ToList();
-        var measuredJson = measured.Any(m => m.value is not null) ? JsonSerializer.Serialize(measured) : null;
+        var measuredJson = measured.Any(m => m.value is not null) ? JsonSerializer.Serialize(measured, MeasuredJsonOptions) : null;
 
         var result = await TryRunAsync(() => qc.ApplyInspectionAsync(RequestKey, lotId, CurrentUserId, Qty, Verdict, measuredJson, Reason));
         if (result is null) return Page();
@@ -58,6 +60,17 @@ public class InputModel(QcTraceDbContext db, QcCommands qc) : QcPageModel
             + (overage > 0 ? $", 생산 수량 초과분 {overage}개는 보류로 기록했습니다(R9)." : ".")
             + (result.Replayed ? " (이미 처리된 요청이라 다시 반영하지 않았습니다)" : "");
         return q.GetProperty("uninspected").GetInt32() > 0 ? RedirectToPage(new { lotId }) : RedirectToPage("./Index");
+    }
+
+    // 원장·검사 이력을 DB에서 바로 읽을 수 있게 한글을 \uXXXX로 바꾸지 않는다
+    private static readonly JsonSerializerOptions MeasuredJsonOptions =
+        new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.Create(System.Text.Unicode.UnicodeRanges.All) };
+
+    private static object? MeasuredValue(string? raw)
+    {
+        raw = raw?.Trim();
+        if (string.IsNullOrEmpty(raw)) return null;
+        return decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out var v) ? v : raw;
     }
 
     public static string VerdictLabel(string verdict) => verdict switch

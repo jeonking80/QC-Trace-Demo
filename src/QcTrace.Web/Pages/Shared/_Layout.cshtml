@@ -62,7 +62,10 @@
 @functions {
     private static readonly (string Path, string Label, string Role)[] Menu =
     [
-        ("/Admin", "관리자", QcTrace.Web.Data.Seed.Roles.Admin),
+        ("/Admin/Ledger", "이력 원장", QcTrace.Web.Data.Seed.Roles.Admin),
+        ("/Admin/Reconcile", "재고 대사", QcTrace.Web.Data.Seed.Roles.Admin),
+        ("/Admin/Items", "기준정보", QcTrace.Web.Data.Seed.Roles.Admin),
+        ("/Admin/Users", "사용자", QcTrace.Web.Data.Seed.Roles.Admin),
         ("/Lots", "LOT", QcTrace.Web.Data.Seed.Roles.Producer),
         ("/Inspections", "검사", QcTrace.Web.Data.Seed.Roles.Inspector),
         ("/Approvals", "출하 승인", QcTrace.Web.Data.Seed.Roles.Approver),
