@@ -1,6 +1,6 @@
-# 저장 프로시저 설명 연습: usp_ApplyInspection
+# 저장 프로시저 해설: usp_ApplyInspection
 
-면접에서 "이 저장 프로시저가 무엇을 하는지 설명해 보라"는 질문에 답하기 위한 정리입니다(PLAN 10장). 원문은 [`src/QcTrace.Web/Data/Sql/V3/001_usp_ApplyInspection.sql`](../src/QcTrace.Web/Data/Sql/V3/001_usp_ApplyInspection.sql)입니다.
+핵심 저장 프로시저 `usp_ApplyInspection`이 하는 일을 순서대로 정리한 문서입니다. 원문은 [`src/QcTrace.Web/Data/Sql/V3/001_usp_ApplyInspection.sql`](../src/QcTrace.Web/Data/Sql/V3/001_usp_ApplyInspection.sql)입니다.
 
 ## 한 문장 요약
 
@@ -23,9 +23,8 @@
 | 11 | `UPDATE LotQuantities`, `usp_RefreshLotStatus` | 현재 수량과 LOT 상태를 원장과 같은 값으로 맞춥니다. 대사 화면과 독립 대조 앱이 이 둘이 같은지 확인합니다. |
 | 12 | `INSERT INTO dbo.QcRequests` → `COMMIT` | 응답 JSON을 요청 키와 함께 저장하고 커밋합니다. 같은 키 재전송은 4번에서 이 응답을 그대로 받습니다. |
 
-## 자주 나올 질문
+## 자주 묻는 질문
 
 - **왜 앱 코드가 아니라 SP에서 하나요?** 수량을 바꾸는 길을 하나로 만들기 위해서입니다. 앱 계정은 수량·이력 테이블에 직접 쓰기 권한이 없고(DENY, 오류 229) SP 실행 권한만 있습니다. 화면·API·다른 도구 어디서 들어와도 같은 규칙을 거칩니다.
 - **UPDLOCK 대신 낙관적 잠금은?** `Lots.RowVersion`도 있지만, 같은 LOT에 동시 요청이 몰릴 때 재시도 없이 순서대로 처리하려고 SP 안에서는 UPDLOCK을 씁니다. 동시 20건 테스트(R8)로 최종 수량이 맞는 것을 확인했습니다.
 - **멱등 키는 누가 만드나요?** 화면은 폼을 그릴 때마다 새 키를 넣고, API는 `Idempotency-Key` 헤더로 받습니다. 새로고침·더블클릭·네트워크 재시도에도 한 번만 반영됩니다.
-- **직접 짤 수 있나요?** 직접 처음부터 작성하지는 않았습니다. AI가 작성한 코드를 규칙 표와 테스트로 검증했고, 위 동작(잠금, 멱등 키, 트랜잭션)은 설명하고 고칠 수 있습니다.
