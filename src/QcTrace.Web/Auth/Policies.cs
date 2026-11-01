@@ -44,7 +44,7 @@ public static class Policies
     public static string HomePathFor(IEnumerable<string> roles)
     {
         var set = roles.ToHashSet();
-        if (set.Contains(Roles.Admin)) return "/Admin";
+        if (set.Contains(Roles.Admin)) return "/Admin/Dashboard";
         if (set.Contains(Roles.Producer)) return "/Lots";
         if (set.Contains(Roles.Inspector)) return "/Inspections";
         if (set.Contains(Roles.Approver)) return "/Approvals";

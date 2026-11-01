@@ -62,7 +62,7 @@
             <td><a asp-page="./Item" asp-route-id="@r.Item.Id">@r.Item.ItemCode</a></td>
             <td>@r.Item.Name</td>
             <td class="small">@r.Item.Spec</td>
-            <td class="text-end">@r.InspectionItemCount@if (r.InspectionItemCount == 0) { <span class="badge text-bg-warning ms-1">없음</span> }</td>
+            <td class="text-end">@r.InspectionItemCount@if (r.InspectionItemCount == 0) { <span class="badge bg-warning text-dark ms-1">없음</span> }</td>
             <td class="text-end">@r.LotCount</td>
             <td>@(r.Item.IsActive ? "사용" : "사용 중지")</td>
             <td>

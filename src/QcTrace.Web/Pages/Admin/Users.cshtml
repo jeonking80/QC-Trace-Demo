@@ -36,7 +36,7 @@
                 <form method="post" asp-page-handler="Lock">
                     <input type="hidden" name="userId" value="@r.User.Id" />
                     <input type="hidden" name="locked" value="@(r.Locked ? "false" : "true")" />
-                    @if (r.Locked) { <span class="badge text-bg-danger">잠김</span> }
+                    @if (r.Locked) { <span class="badge bg-danger">잠김</span> }
                     <button class="btn btn-sm btn-outline-secondary" type="submit">@(r.Locked ? "잠금 해제" : "잠그기")</button>
                 </form>
             </td>

@@ -26,3 +26,10 @@ body {
 .status-badge { font-size: .8rem; }
 .delayed { background: #fff3cd; }
 .alert-danger:empty, .validation-summary-valid { display: none; }
+.kpi { color: inherit; }
+a.kpi:hover { background: #f8f9fa; }
+.action-item { border-left: 4px solid transparent; }
+.action-item.sev-danger { border-left-color: var(--bs-danger); }
+.action-item.sev-warning { border-left-color: var(--bs-warning); }
+.action-item.sev-info { border-left-color: var(--bs-info); }
+#dash-action-list { max-height: 70vh; overflow-y: auto; }

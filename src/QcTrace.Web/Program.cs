@@ -113,6 +113,7 @@ app.UseAuthorization();
 app.MapRazorPages();
 app.MapLotEndpoints();
 app.MapCommandEndpoints();
+app.MapDashboardEndpoints();
 
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
