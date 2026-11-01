@@ -23,7 +23,7 @@ public class IndependentReconcileTests(SqlServerFixture fixture)
         var fail = await _db.ApplyInspection(Db.Key(), lot, "inspector1", 20, "Fail", reason: "불량");
         await _db.ApplyInspection(Db.Key(), lot, "inspector2", 5, "Pass", reason: "재판정",
             correctsInspectionId: fail.Response.GetProperty("inspectionId").GetInt64());
-        await _db.DisposeFailed(Db.Key(), lot, "inspector1", 10, "Scrap", "폐기");
+        await _db.DisposeFailed(Db.Key(), lot, "admin", 10, "Scrap", "폐기");
         await _db.DisposeFailed(Db.Key(), lot, "inspector1", 5, "Reinspect", "재검사");
         await _db.ApproveShipment(Db.Key(), lot, "approver", 50);
         await _db.ShipLot(Db.Key(), lot, "shipper", 30);

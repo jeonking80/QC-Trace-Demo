@@ -6,7 +6,7 @@ using QcTrace.Web.Services;
 
 namespace QcTrace.Web.Pages.Inspections;
 
-/// <summary>불합격 처리: 재검사 요청(불합격 → 미검사) 또는 폐기(불합격 → 폐기). 사유 필수(usp_DisposeFailed).</summary>
+/// <summary>불합격 처리(검사자): 재검사 요청(불합격 → 미검사). 폐기는 관리자만(/Admin/Scrap, 2026-11-01 사용자 결정). 사유 필수(usp_DisposeFailed).</summary>
 public class DisposeModel(QcTraceDbContext db, QcCommands qc) : QcPageModel
 {
     public Lot Lot { get; private set; } = null!;

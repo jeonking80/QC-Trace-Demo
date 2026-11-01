@@ -1,0 +1,39 @@
+@page
+@model QcTrace.Web.Pages.Admin.ScrapModel
+@using QcTrace.Web.Services
+@{
+    ViewData["Title"] = "불합격 폐기";
+}
+
+<h1 class="h3">불합격 폐기</h1>
+<p class="text-muted small">
+    폐기는 관리자만 합니다(2026-11-01 결정). 검사자는 불합격을 재검사로 되돌리는 것만 할 수 있습니다.
+    폐기는 되돌릴 수 없으니 불합격 사유를 확인하고 수량과 사유를 넣으세요. 기록은 원장에 남습니다.
+</p>
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+<table class="table table-sm" id="scrap-lots">
+    <thead><tr><th>LOT</th><th>불합격</th><th>불합격 기록</th><th>폐기</th></tr></thead>
+    <tbody>
+    @foreach (var r in Model.Rows)
+    {
+        <tr>
+            <td><partial name="_LotLink" model="r.Lot.LotNo" /><div class="small text-muted">@r.Lot.Item.ItemCode @r.Lot.Item.Name</div></td>
+            <td class="text-danger"><strong>@r.Lot.Quantity!.Failed</strong></td>
+            <td class="small">
+                @foreach (var f in r.Fails.Take(3)) { <div>@Kst.Format(f.At) · @(f.Qty)개 · @f.Reason (@f.Inspector)</div> }
+            </td>
+            <td>
+                <form method="post" class="d-flex flex-wrap gap-1">
+                    <input type="hidden" name="lotId" value="@r.Lot.Id" />
+                    <input type="hidden" name="requestKey" value="@QcTrace.Web.Pages.QcPageModel.NewRequestKey()" />
+                    <input type="number" name="qty" min="1" max="@r.Lot.Quantity!.Failed" value="@r.Lot.Quantity!.Failed" class="form-control form-control-sm" style="width:6rem" aria-label="폐기 수량" />
+                    <input name="reason" required maxlength="500" class="form-control form-control-sm" placeholder="폐기 사유 (필수)" style="min-width:12rem" aria-label="폐기 사유" />
+                    <button type="submit" class="btn btn-sm btn-danger">폐기 확정</button>
+                </form>
+            </td>
+        </tr>
+    }
+    @if (Model.Rows.Count == 0) { <tr><td colspan="4" class="text-muted">폐기할 불합격이 없습니다.</td></tr> }
+    </tbody>
+</table>

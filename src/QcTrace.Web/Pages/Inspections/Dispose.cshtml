@@ -22,18 +22,10 @@
 
 <form method="post" class="row g-2 align-items-end">
     <input type="hidden" asp-for="RequestKey" />
-    <div class="col-auto">
-        <label class="form-label">처리 방법</label>
-        <div>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" asp-for="Action" value="Reinspect" id="act-re" />
-                <label class="form-check-label" for="act-re">재검사 요청</label>
-            </div>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" asp-for="Action" value="Scrap" id="act-scrap" />
-                <label class="form-check-label" for="act-scrap">폐기</label>
-            </div>
-        </div>
+    <input type="hidden" asp-for="Action" value="Reinspect" />
+    <div class="col-12 small text-muted">
+        불합격 수량을 재검사 대기(미검사)로 되돌립니다. <strong>폐기는 관리자만 합니다</strong>(2026-11-01 결정).
+        폐기가 필요하면 관리자에게 알리세요. 남은 불합격은 관리자 화면 "불합격 폐기"에 보입니다.
     </div>
     <div class="col-auto">
         <label asp-for="Qty" class="form-label">수량 (최대 @Model.Lot.Quantity!.Failed)</label>
@@ -44,7 +36,7 @@
         <input asp-for="Reason" class="form-control" maxlength="500" required />
     </div>
     <div class="col-auto">
-        <button type="submit" class="btn btn-danger">처리</button>
+        <button type="submit" class="btn btn-warning">재검사 요청</button>
         <a class="btn btn-link" asp-page="./Index">목록</a>
     </div>
 </form>

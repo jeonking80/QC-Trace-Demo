@@ -19,6 +19,8 @@ public class Inspection
     public string Verdict { get; set; } = "";
     public string? MeasuredJson { get; set; }
     public string? Reason { get; set; }
+    /// <summary>불량 유형(불합격·보류). 목록에서 고르고, "기타"면 사유를 직접 쓴다. 2026-11-01 이전 기록은 비어 있다(자유 입력 사유).</summary>
+    public int? DefectCodeId { get; set; }
     public long? CorrectsInspectionId { get; set; }
     public DateTime CreatedAt { get; set; }
 }

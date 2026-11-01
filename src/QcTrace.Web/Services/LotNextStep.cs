@@ -45,7 +45,10 @@ public static class LotNextStep
                     $"검사자 일정 회신({Kst.Format(lot.ProposedDueAt)}까지)이 결정권자 확인을 기다립니다(생산 담당 거절 또는 확정 기한 변경). 최종 기한을 정합니다.", "/Schedule"));
         }
         if (q.Failed > 0)
-            steps.Add(new(Roles.Inspector, RoleLabel(Roles.Inspector), $"불합격 {q.Failed}개를 재검사 또는 폐기로 처리합니다(사유 필수).", $"/Inspections/Dispose/{lot.Id}"));
+        {
+            steps.Add(new(Roles.Inspector, RoleLabel(Roles.Inspector), $"불합격 {q.Failed}개를 재검사 요청합니다(사유 필수). 폐기는 관리자가 합니다.", $"/Inspections/Dispose/{lot.Id}"));
+            steps.Add(new(Roles.Admin, RoleLabel(Roles.Admin), $"폐기가 필요하면 관리자가 폐기합니다(폐기는 관리자만, 사유 필수).", "/Admin/Scrap"));
+        }
         if (q.Held > 0)
             steps.Add(new(Roles.Inspector, RoleLabel(Roles.Inspector), $"보류 {q.Held}개는 다시 판정(정정)해야 합니다.", "/Inspections"));
         var available = q.Passed - q.Shipped - q.Reserved;

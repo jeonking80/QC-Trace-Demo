@@ -141,8 +141,8 @@ public static class DashboardEndpoints
             if (l.Q.Held > 0)
                 list.Add(new ActionItem("held", "warning", "보류 판정 필요", $"보류 {l.Q.Held}개", l.LotNo, "검사자", Work(Roles.Inspector, "/Inspections", l.LotNo)));
             if (l.Q.Failed > 0)
-                list.Add(new ActionItem("failed", "warning", "불합격 처리 대기", $"불합격 {l.Q.Failed}개 (재검사·폐기)", l.LotNo, "검사자",
-                    Work(Roles.Inspector, $"/Inspections/Dispose/{l.Id}", l.LotNo)));
+                list.Add(new ActionItem("failed", "warning", "불합격 처리 대기", $"불합격 {l.Q.Failed}개 (재검사는 검사자·폐기는 관리자)", l.LotNo, "검사자·관리자",
+                    user.IsInRole(Roles.Admin) ? "/Admin/Scrap" : Work(Roles.Inspector, $"/Inspections/Dispose/{l.Id}", l.LotNo)));
         }
         foreach (var l in lots)
         {

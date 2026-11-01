@@ -39,7 +39,7 @@ test('생산 담당은 LOT 화면 하나에서 찾고, 상세에서 불합격 �
   await producer.locator('a.lot-link', { hasText: /\d{8}-002$/ }).first().click();
   await expect(producer).toHaveURL(/\/Trace\/Lot\/LOT-\d{8}-002/);
   await expect(producer.locator('h1')).not.toContainText('출하 완료');
-  await expect(producer.locator('#next-steps')).toContainText('재검사 또는 폐기');
+  await expect(producer.locator('#next-steps')).toContainText('재검사 요청합니다');
   await expect(producer.locator('#lot-inspections')).toContainText('불합격');
   await expect(producer.locator('#lot-timeline')).toContainText('검사 의뢰');
   await shot(producer, '12-lot-detail');

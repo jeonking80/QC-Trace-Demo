@@ -22,6 +22,7 @@ public class QcTraceDbContext(DbContextOptions<QcTraceDbContext> options)
     public DbSet<RoleChange> RoleChanges => Set<RoleChange>();
     public DbSet<DelayAlert> DelayAlerts => Set<DelayAlert>();
     public DbSet<ScheduleEvent> ScheduleEvents => Set<ScheduleEvent>();
+    public DbSet<DefectCode> DefectCodes => Set<DefectCode>();
 
     private const string UtcNow = "SYSUTCDATETIME()";
 
@@ -128,6 +129,7 @@ public class QcTraceDbContext(DbContextOptions<QcTraceDbContext> options)
             LotFk(e, x => x.LotId);
             UserFk(e, x => x.InspectorId);
             e.HasOne<Inspection>().WithMany().HasForeignKey(x => x.CorrectsInspectionId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<DefectCode>().WithMany().HasForeignKey(x => x.DefectCodeId).OnDelete(DeleteBehavior.Restrict);
             e.ToTable(t =>
             {
                 t.HasTrigger(AppendOnlyTriggerName("Inspections"));
@@ -218,6 +220,13 @@ public class QcTraceDbContext(DbContextOptions<QcTraceDbContext> options)
             e.HasIndex(x => x.LotId).IsUnique();
             e.HasIndex(x => x.DetectedAt);
             LotFk(e, x => x.LotId);
+        });
+
+        b.Entity<DefectCode>(e =>
+        {
+            e.Property(x => x.Code).HasMaxLength(20);
+            e.Property(x => x.Name).HasMaxLength(100);
+            e.HasIndex(x => x.Code).IsUnique();
         });
 
         b.Entity<ScheduleEvent>(e =>

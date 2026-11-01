@@ -9,14 +9,14 @@ test('불합격분을 재검사로 되돌리면 미검사로 돌아가고 다시
   const inspector = await loginAs(browser, 'inspector2');
   expect(await inspect(inspector, lotNo, 20, 'Fail', { reason: '길이 미달', outOfSpec: true })).toBe(0);
 
-  // 불합격 처리: 사유 필수, 재검사 선택
+  // 불합격 처리: 검사자는 재검사 요청만(폐기는 관리자), 사유 필수
   await inspector.goto('/Inspections');
   await inspector.locator('tr', { hasText: lotNo }).locator('a', { hasText: '불합격 처리' }).click();
-  await inspector.check('#act-re');
+  await expect(inspector.locator('#act-scrap')).toHaveCount(0);
   await inspector.fill('#Qty', '20');
   await inspector.fill('#Reason', '측정 지그 재교정 후 재검사');
   await shot(inspector, '05-dispose-reinspect');
-  await inspector.click('form button[type="submit"]:has-text("처리")');
+  await inspector.click('form button[type="submit"]:has-text("재검사 요청")');
   await expect(success(inspector)).toContainText('재검사 대기(미검사)로 되돌렸습니다');
 
   // 다시 검사 목록에 미검사 20으로 나오고, 합격 처리된다

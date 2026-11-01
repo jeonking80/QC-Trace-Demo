@@ -156,7 +156,7 @@ public sealed class CommandApiTests(SqlServerFixture fixture) : IDisposable
                 break;
             case "dispose":
                 await _db.ApplyInspection(Db.Key(), lot, "inspector1", 2, "Fail", reason: "불량");
-                request = Post($"/api/lots/{lot}/dispositions", new { qty = 3, action = "Scrap", reason = "폐기" });
+                request = Post($"/api/lots/{lot}/dispositions", new { qty = 3, action = "Reinspect", reason = "재검사" });
                 break;
             case "R11":
                 var (specItem, diameter, _) = await fixture.CreateItemWithSpecsAsync();

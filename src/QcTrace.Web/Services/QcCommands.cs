@@ -42,10 +42,11 @@ public sealed class QcCommands(IConfiguration configuration)
             ("@DueAt", dueAtUtc), ("@Reason", reason));
 
     public Task<CommandResult> ApplyInspectionAsync(string requestKey, int lotId, string inspectorId, int qty, string verdict,
-        string? measuredJson, string? reason, long? correctsInspectionId = null) =>
+        string? measuredJson, string? reason, long? correctsInspectionId = null, int? defectCodeId = null) =>
         ExecAsync("dbo.usp_ApplyInspection",
             ("@RequestKey", requestKey), ("@LotId", lotId), ("@InspectorId", inspectorId), ("@Qty", qty), ("@Verdict", verdict),
-            ("@MeasuredJson", measuredJson), ("@Reason", reason), ("@CorrectsInspectionId", correctsInspectionId));
+            ("@MeasuredJson", measuredJson), ("@Reason", reason), ("@CorrectsInspectionId", correctsInspectionId),
+            ("@DefectCodeId", defectCodeId));
 
     public Task<CommandResult> DisposeFailedAsync(string requestKey, int lotId, string inspectorId, int qty, string action, string? reason) =>
         ExecAsync("dbo.usp_DisposeFailed",

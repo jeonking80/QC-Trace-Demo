@@ -43,7 +43,7 @@ public sealed class LotDetailTests(SqlServerFixture fixture) : IDisposable
             new { inspectionItemId = lengthId, name = "길이", value = 50m },
         });
         await _db.ApplyInspection(Db.Key(), lot, "inspector1", 4, "Fail", reason: "외경 상한 초과 흠집", measuredJson: measured);
-        await _db.DisposeFailed(Db.Key(), lot, "inspector2", 3, "Scrap", "용접부 균열로 폐기");
+        await _db.DisposeFailed(Db.Key(), lot, "admin", 3, "Scrap", "용접부 균열로 폐기");
 
         var html = await _factory.ClientFor("producer").GetStringAsync($"/Trace/Lot/{lotNo}");
 
@@ -53,7 +53,7 @@ public sealed class LotDetailTests(SqlServerFixture fixture) : IDisposable
         Assert.Contains("불합격 → 폐기 3개", html);
         Assert.Contains("용접부 균열로 폐기", html);
         Assert.Contains("남은 미검사 6개를 검사합니다", html);
-        Assert.Contains("불합격 1개를 재검사 또는 폐기로 처리합니다", html);
+        Assert.Contains("불합격 1개를 재검사 요청합니다", html);
         Assert.DoesNotContain("처리하러 가기", html);   // 생산 담당에게는 검사 화면 링크가 없다
 
         var list = await _factory.ClientFor("producer").GetStringAsync("/Lots");
@@ -66,7 +66,7 @@ public sealed class LotDetailTests(SqlServerFixture fixture) : IDisposable
         var lot = await fixture.CreateLotAsync(10);
         var lotNo = await LotNoAsync(lot);
         await _db.ApplyInspection(Db.Key(), lot, "inspector1", 10, "Fail", reason: "불량");
-        await _db.DisposeFailed(Db.Key(), lot, "inspector2", 6, "Scrap", "최근내역 폐기 확인");
+        await _db.DisposeFailed(Db.Key(), lot, "admin", 6, "Scrap", "최근내역 폐기 확인");
         await _db.DisposeFailed(Db.Key(), lot, "inspector1", 4, "Reinspect", "최근내역 재검사 확인");
 
         var all = await _factory.ClientFor("inspector1").GetStringAsync("/Inspections");
@@ -83,7 +83,7 @@ public sealed class LotDetailTests(SqlServerFixture fixture) : IDisposable
     {
         var lot = await fixture.CreateLotAsync(10);
         await _db.ApplyInspection(Db.Key(), lot, "inspector1", 10, "Fail", reason: "불량");
-        await _db.DisposeFailed(Db.Key(), lot, "inspector1", 3, "Scrap", "폐기");
+        await _db.DisposeFailed(Db.Key(), lot, "admin", 3, "Scrap", "폐기");
         await _db.DisposeFailed(Db.Key(), lot, "inspector1", 2, "Reinspect", "재검사");
 
         var json = JsonDocument.Parse(await _factory.ClientFor("admin").GetStringAsync("/api/dashboard")).RootElement.GetProperty("failedHandling");

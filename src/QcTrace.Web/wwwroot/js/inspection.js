@@ -1,4 +1,5 @@
-// 검사 입력 화면: 측정값으로 판정을 제안하고, 불합격·보류일 때 사유를 필수로 표시한다.
+// 검사 입력 화면: 측정값으로 판정을 제안하고, 불합격·보류일 때 불량 유형을 필수로,
+// 유형이 "기타"일 때 사유를 필수로 표시한다(유형을 고르면 사유는 덧붙이는 설명).
 // 화면 편의 기능일 뿐이고, 최종 검사는 서버(usp_ApplyInspection)가 한다.
 (function () {
     const form = document.getElementById('inspection-form');
@@ -7,6 +8,8 @@
     const reason = form.querySelector('[name="Reason"]');
     const reasonMark = document.getElementById('reason-required');
     const auto = document.getElementById('auto-verdict');
+    const defect = form.querySelector('[name="DefectCodeId"]');
+    const defectMark = document.getElementById('defect-required');
     let userPicked = false;
 
     function check(input) {
@@ -24,7 +27,14 @@
     function selected() { return form.querySelector('.verdict:checked')?.value; }
 
     function updateReason() {
-        const needs = selected() === 'Fail' || selected() === 'Hold';
+        const issue = selected() === 'Fail' || selected() === 'Hold';
+        const other = defect?.selectedOptions[0]?.dataset.code === 'ETC';
+        if (defect) {
+            defect.disabled = !issue;
+            defect.required = issue;
+            defectMark.classList.toggle('d-none', !issue);
+        }
+        const needs = issue && (!defect || other);
         reasonMark.classList.toggle('d-none', !needs);
         reason.required = needs;
     }
@@ -46,5 +56,6 @@
 
     inputs.forEach(i => i.addEventListener('input', refresh));
     form.querySelectorAll('.verdict').forEach(r => r.addEventListener('change', () => { userPicked = true; updateReason(); }));
+    defect?.addEventListener('change', updateReason);
     refresh();
 })();

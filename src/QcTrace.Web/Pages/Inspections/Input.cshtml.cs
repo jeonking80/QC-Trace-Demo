@@ -21,6 +21,9 @@ public class InputModel(QcTraceDbContext db, QcCommands qc) : QcPageModel
     [BindProperty] public int Qty { get; set; }
     [BindProperty] public string Verdict { get; set; } = Data.Entities.Verdict.Pass;
     [BindProperty] public string? Reason { get; set; }
+    /// <summary>불량 유형(불합격·보류). 목록에서 고르고 "기타"면 사유를 직접 쓴다(2026-11-01 사용자 결정)</summary>
+    [BindProperty] public int? DefectCodeId { get; set; }
+    public List<DefectCode> DefectCodes { get; private set; } = [];
     /// <summary>
     /// 항목 Id → 입력값. 모델 바인딩을 쓰지 않는다: Dictionary 바인딩은 Measured[..] 키가 하나도 없으면
     /// 폼 전체 키를 int로 바꾸려다 500이 난다(검사 항목이 없는 품목). OnPostAsync에서 폼을 직접 읽는다.
@@ -51,7 +54,14 @@ public class InputModel(QcTraceDbContext db, QcCommands qc) : QcPageModel
         }).ToList();
         var measuredJson = measured.Any(m => m.value is not null) ? JsonSerializer.Serialize(measured, MeasuredJsonOptions) : null;
 
-        var result = await TryRunAsync(() => qc.ApplyInspectionAsync(RequestKey, lotId, CurrentUserId, Qty, Verdict, measuredJson, Reason));
+        // 화면에서는 불합격·보류에 불량 유형을 반드시 고르게 한다(유형별 집계용). API는 기존처럼 사유만으로도 받는다.
+        if (Verdict != Data.Entities.Verdict.Pass && DefectCodeId is null && DefectCodes.Count > 0)
+        {
+            ModelState.AddModelError("", "불합격·보류는 불량 유형을 골라야 합니다. 목록에 없으면 \"기타\"를 고르고 사유를 쓰세요.");
+            return Page();
+        }
+        var result = await TryRunAsync(() => qc.ApplyInspectionAsync(RequestKey, lotId, CurrentUserId, Qty, Verdict, measuredJson, Reason,
+            defectCodeId: Verdict == Data.Entities.Verdict.Pass ? null : DefectCodeId));
         if (result is null) return Page();
 
         var q = result.Json.GetProperty("quantities");
@@ -87,6 +97,7 @@ public class InputModel(QcTraceDbContext db, QcCommands qc) : QcPageModel
         if (lot is null) return false;
         Lot = lot;
         Items = await db.InspectionItems.AsNoTracking().Where(i => i.ItemId == lot.ItemId).OrderBy(i => i.SortOrder).ToListAsync();
+        DefectCodes = await db.DefectCodes.AsNoTracking().Where(d => d.IsActive).OrderBy(d => d.SortOrder).ThenBy(d => d.Code).ToListAsync();
         return true;
     }
 }

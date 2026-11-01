@@ -1,0 +1,48 @@
+@page
+@model QcTrace.Web.Pages.Admin.DefectCodesModel
+@{
+    ViewData["Title"] = "불량 유형";
+}
+
+<h1 class="h3">불량 유형</h1>
+<p class="text-muted small">
+    검사자는 불합격·보류 때 이 목록에서 유형을 고르고, 목록에 없으면 "기타"를 골라 사유를 직접 씁니다.
+    유형은 지우지 않고 사용 중지만 합니다(지난 기록이 참조함). <a asp-page="./Items">← 품목 기준정보</a>
+</p>
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+<form method="post" asp-page-handler="Add" class="row g-2 align-items-end mb-3" id="add-defect">
+    <div class="col-md-2"><label class="form-label small mb-0" for="NewCode">코드</label><input class="form-control form-control-sm" asp-for="NewCode" maxlength="20" placeholder="예: BURR" /></div>
+    <div class="col-md-4"><label class="form-label small mb-0" for="NewName">이름</label><input class="form-control form-control-sm" asp-for="NewName" maxlength="100" placeholder="예: 버(거스러미)" /></div>
+    <div class="col-auto"><button type="submit" class="btn btn-sm btn-primary">추가</button></div>
+</form>
+
+<h2 class="h5">유형 목록과 최근 @(QcTrace.Web.Pages.Admin.DefectCodesModel.StatDays)일 불량 수량 <span class="text-muted small">(처음 판정 기준, 정정 제외)</span></h2>
+<table class="table table-sm" id="defect-codes">
+    <thead><tr><th>코드</th><th>이름</th><th class="text-end">불합격</th><th class="text-end">보류</th><th class="text-end">건수</th><th>상태</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var r in Model.Rows)
+    {
+        <tr class="@(r.Code.IsActive ? "" : "text-muted")">
+            <td>@r.Code.Code</td>
+            <td>@r.Code.Name</td>
+            <td class="text-end">@r.FailQty</td>
+            <td class="text-end">@r.HoldQty</td>
+            <td class="text-end">@r.Count</td>
+            <td>@(r.Code.IsActive ? "사용" : "사용 중지")</td>
+            <td>
+                @if (r.Code.Code != QcTrace.Web.Data.Entities.DefectCode.Other)
+                {
+                    <form method="post" asp-page-handler="Toggle" asp-route-id="@r.Code.Id">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">@(r.Code.IsActive ? "사용 중지" : "다시 사용")</button>
+                    </form>
+                }
+            </td>
+        </tr>
+    }
+    <tr class="text-muted">
+        <td>–</td><td>유형 없음 (이전 자유 입력 기록)</td>
+        <td class="text-end">@Model.Uncoded.FailQty</td><td class="text-end">@Model.Uncoded.HoldQty</td><td class="text-end">@Model.Uncoded.Count</td><td></td><td></td>
+    </tr>
+    </tbody>
+</table>

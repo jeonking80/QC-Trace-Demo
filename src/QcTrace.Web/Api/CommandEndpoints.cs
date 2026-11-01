@@ -15,7 +15,7 @@ public static class CommandEndpoints
     public const string IdempotencyHeader = "Idempotency-Key";
 
     public sealed record RegisterLotRequest(int ItemId, int ProducedQty, DateOnly ProducedOn, string? Shift);
-    public sealed record InspectionRequest(int Qty, string? Verdict, string? MeasuredJson, string? Reason, long? CorrectsInspectionId);
+    public sealed record InspectionRequest(int Qty, string? Verdict, string? MeasuredJson, string? Reason, long? CorrectsInspectionId, int? DefectCodeId = null);
     public sealed record DispositionRequest(int Qty, string? Action, string? Reason);
     public sealed record ApprovalRequest(int Qty, string? Decision, string? Reason);
     public sealed record ShipmentRequest(int Qty, string? Destination);
@@ -34,12 +34,12 @@ public static class CommandEndpoints
 
         lots.MapPost("/{lotId:int}/inspections", (int lotId, InspectionRequest body, HttpContext http, QcCommands qc) =>
             Run(http, (key, user) => qc.ApplyInspectionAsync(key, lotId, user, body.Qty, body.Verdict ?? "",
-                body.MeasuredJson, body.Reason, body.CorrectsInspectionId)))
+                body.MeasuredJson, body.Reason, body.CorrectsInspectionId, body.DefectCodeId)))
             .RequireAuthorization(Policies.Inspector);
 
         lots.MapPost("/{lotId:int}/dispositions", (int lotId, DispositionRequest body, HttpContext http, QcCommands qc) =>
             Run(http, (key, user) => qc.DisposeFailedAsync(key, lotId, user, body.Qty, body.Action ?? "", body.Reason)))
-            .RequireAuthorization(Policies.Inspector);
+            .RequireAuthorization(Policies.Disposer);   // 재검사는 검사자, 폐기는 관리자(SP가 처리 방법별로 역할 검사)
 
         lots.MapPost("/{lotId:int}/approvals", (int lotId, ApprovalRequest body, HttpContext http, QcCommands qc) =>
             Run(http, (key, user) => qc.ApproveShipmentAsync(key, lotId, user, body.Qty, body.Decision ?? "Approved", body.Reason)))

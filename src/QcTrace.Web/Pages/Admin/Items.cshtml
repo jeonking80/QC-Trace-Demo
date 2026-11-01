@@ -5,6 +5,7 @@
 }
 
 <h1 class="h3">기준정보 · 품목</h1>
+<p class="small"><a asp-page="./DefectCodes">불량 유형 관리 →</a> (검사자가 불합격·보류 때 고르는 목록)</p>
 <partial name="_StatusMessage" model="Model.StatusMessage" />
 @if (Model.ImportErrors.Count > 0)
 {

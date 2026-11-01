@@ -225,6 +225,38 @@ namespace QcTrace.Web.Data.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
+            modelBuilder.Entity("QcTrace.Web.Data.Entities.DefectCode", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("DefectCodes");
+                });
+
             modelBuilder.Entity("QcTrace.Web.Data.Entities.DelayAlert", b =>
                 {
                     b.Property<long>("Id")
@@ -278,6 +310,9 @@ namespace QcTrace.Web.Data.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("SYSUTCDATETIME()");
 
+                    b.Property<int?>("DefectCodeId")
+                        .HasColumnType("int");
+
                     b.Property<string>("InspectorId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -303,6 +338,8 @@ namespace QcTrace.Web.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CorrectsInspectionId");
+
+                    b.HasIndex("DefectCodeId");
 
                     b.HasIndex("InspectorId");
 
@@ -915,6 +952,11 @@ namespace QcTrace.Web.Data.Migrations
                     b.HasOne("QcTrace.Web.Data.Entities.Inspection", null)
                         .WithMany()
                         .HasForeignKey("CorrectsInspectionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("QcTrace.Web.Data.Entities.DefectCode", null)
+                        .WithMany()
+                        .HasForeignKey("DefectCodeId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("QcTrace.Web.Data.Entities.AppUser", null)

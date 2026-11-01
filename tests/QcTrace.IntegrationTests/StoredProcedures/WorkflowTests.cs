@@ -72,7 +72,7 @@ public class WorkflowTests(SqlServerFixture fixture)
         await _db.ApplyInspection(Db.Key(), lot, "inspector1", 30, "Fail", reason: "치수 불량");
 
         await _db.DisposeFailed(Db.Key(), lot, "inspector2", 10, "Reinspect", "재작업 후 재검사");
-        var scrap = await _db.DisposeFailed(Db.Key(), lot, "inspector1", 15, "Scrap", "수리 불가");
+        var scrap = await _db.DisposeFailed(Db.Key(), lot, "admin", 15, "Scrap", "수리 불가");
 
         var q = await _db.QuantitiesAsync(lot);
         Assert.Equal(new Quantities(80, 0, 5, 0, 0, 0, 15), q);
@@ -87,9 +87,9 @@ public class WorkflowTests(SqlServerFixture fixture)
         var lot = await fixture.CreateLotAsync(20);
         await _db.ApplyInspection(Db.Key(), lot, "inspector1", 5, "Fail", reason: "외관 불량");
 
-        await SqlAssert.ThrowsAsync(52013, () => _db.DisposeFailed(Db.Key(), lot, "inspector1", 6, "Scrap", "폐기"));
-        await SqlAssert.ThrowsAsync(52004, () => _db.DisposeFailed(Db.Key(), lot, "inspector1", 1, "Scrap", null));
-        await SqlAssert.ThrowsAsync(52004, () => _db.DisposeFailed(Db.Key(), lot, "inspector1", 1, "Scrap", "  "));
+        await SqlAssert.ThrowsAsync(52013, () => _db.DisposeFailed(Db.Key(), lot, "admin", 6, "Scrap", "폐기"));
+        await SqlAssert.ThrowsAsync(52004, () => _db.DisposeFailed(Db.Key(), lot, "admin", 1, "Scrap", null));
+        await SqlAssert.ThrowsAsync(52004, () => _db.DisposeFailed(Db.Key(), lot, "admin", 1, "Scrap", "  "));
         await SqlAssert.ThrowsAsync(50403, () => _db.DisposeFailed(Db.Key(), lot, "approver", 1, "Scrap", "폐기"));
         await SqlAssert.ThrowsAsync(50400, () => _db.DisposeFailed(Db.Key(), lot, "inspector1", 1, "Ship", "폐기"));
 

@@ -65,7 +65,8 @@ E2E 시나리오 1·3과 같은 흐름입니다. 시드의 검사·출하 기록
 | ![이력 원장](docs/screenshots/08-ledger.png) 08 이력 원장 | ![재고 대사](docs/screenshots/09-reconcile.png) 09 재고 대사 |
 | ![보고서·알림](docs/screenshots/10-reports.png) 10 보고서·알림 | ![대시보드](docs/screenshots/02-dashboard.png) 02 운영 대시보드 |
 | ![긴급 의뢰](docs/screenshots/13-urgent-request.png) 13 긴급 의뢰·일정 회신 확인 | ![일정 회신](docs/screenshots/14-schedule-propose.png) 14 검사자 일정 회신 |
-| ![일정 결정](docs/screenshots/15-schedule-decide.png) 15 일정 결정(관리자·승인권자) | |
+| ![일정 결정](docs/screenshots/15-schedule-decide.png) 15 일정 결정(관리자·승인권자) | ![불량 유형](docs/screenshots/16-defect-code.png) 16 불량 유형 선택 |
+| ![불합격 폐기](docs/screenshots/17-admin-scrap.png) 17 불합격 폐기(관리자만) | |
 | ![LOT 조회](docs/screenshots/11-lot-search.png) 11 LOT 조회 | ![LOT 상세](docs/screenshots/12-lot-detail.png) 12 LOT 상세(생산 담당 화면: 불합격 사유·측정값·다음 할 일) |
 
 ## 기술 구성
@@ -89,8 +90,8 @@ E2E 시나리오 1·3과 같은 흐름입니다. 시드의 검사·출하 기록
 | 층 | 도구 | 결과 |
 | --- | --- | --- |
 | 규칙 (R1~R10, 구현 코드를 보지 않고 작성) | xUnit + Testcontainers | 81/81 통과 |
-| 통합 (SP · 트리거 · 권한 · API · 화면 · 자동화 · R11 · 검사 일정) | xUnit + Testcontainers | 150/150 통과 |
-| E2E | Playwright 시나리오 4개 (정상, 불합격 재검사, 본인 승인 차단, 검사 일정 협의) + 화면 확인 2개 | 6/6 통과 |
+| 통합 (SP · 트리거 · 권한 · API · 화면 · 자동화 · R11 · 검사 일정) | xUnit + Testcontainers | 156/156 통과 |
+| E2E | Playwright 시나리오 5개 (정상, 불합격 재검사, 본인 승인 차단, 검사 일정 협의, 불량 유형·관리자 폐기) + 화면 확인 2개 | 7/7 통과 |
 | 독립 대조 | 별도 콘솔 앱, 원장 합으로 수량 재계산 + 원장 행마다 근거 원본 행 확인 | LOT 33건 불일치 0건 |
 
 - 업무 규칙 R1~R11과 테스트 대응표: [docs/rules-traceability.md](docs/rules-traceability.md)

@@ -52,6 +52,8 @@ async function inspect(page, lotNo, qty, verdict, { reason, outOfSpec = false } 
   }
   await page.fill('#Qty', String(qty));
   await page.check(`#verdict-${verdict}`);
+  // 불합격·보류는 불량 유형 필수: 시나리오의 사유를 그대로 남기려고 "기타"를 고른다
+  if (verdict !== 'Pass') await page.selectOption('#DefectCodeId', { label: '기타 (직접 입력)' });
   if (reason) await page.fill('#Reason', reason);
   await page.click('#inspection-form button[type="submit"]');
   await expect(success(page)).toContainText(`검사 ${qty}개`);

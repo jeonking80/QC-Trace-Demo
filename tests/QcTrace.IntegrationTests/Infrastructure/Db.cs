@@ -17,11 +17,16 @@ public sealed class Db(SqlServerFixture fixture)
     public string User(string userName) => fixture.UserIds[userName];
 
     public Task<SpResult> ApplyInspection(string key, int lotId, string inspector, int qty, string verdict,
-        string? reason = null, long? correctsInspectionId = null, string? measuredJson = null) =>
-        CallAsync("dbo.usp_ApplyInspection",
-            ("@RequestKey", key), ("@LotId", lotId), ("@InspectorId", User(inspector)), ("@Qty", qty),
-            ("@Verdict", verdict), ("@MeasuredJson", measuredJson), ("@Reason", reason),
-            ("@CorrectsInspectionId", correctsInspectionId));
+        string? reason = null, long? correctsInspectionId = null, string? measuredJson = null, int? defectCodeId = null) =>
+        defectCodeId is null
+            ? CallAsync("dbo.usp_ApplyInspection",
+                ("@RequestKey", key), ("@LotId", lotId), ("@InspectorId", User(inspector)), ("@Qty", qty),
+                ("@Verdict", verdict), ("@MeasuredJson", measuredJson), ("@Reason", reason),
+                ("@CorrectsInspectionId", correctsInspectionId))
+            : CallAsync("dbo.usp_ApplyInspection",
+                ("@RequestKey", key), ("@LotId", lotId), ("@InspectorId", User(inspector)), ("@Qty", qty),
+                ("@Verdict", verdict), ("@MeasuredJson", measuredJson), ("@Reason", reason),
+                ("@CorrectsInspectionId", correctsInspectionId), ("@DefectCodeId", defectCodeId));
 
     public Task<SpResult> RegisterLot(string key, string producer, int itemId, int qty, DateTime producedOn, string shift = "A조") =>
         CallAsync("dbo.usp_RegisterLot",

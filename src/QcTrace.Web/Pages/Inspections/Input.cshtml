@@ -55,9 +55,20 @@
             </div>
             <div class="form-text" id="auto-verdict"></div>
         </div>
+        <div class="col-md-3" id="defect-box">
+            <label for="DefectCodeId" class="form-label">불량 유형 <span id="defect-required" class="text-danger d-none">(필수)</span></label>
+            <select id="DefectCodeId" name="DefectCodeId" class="form-select">
+                <option value="">선택</option>
+                @foreach (var d in Model.DefectCodes)
+                {
+                    <option value="@d.Id" data-code="@d.Code" selected="@(Model.DefectCodeId == d.Id)">@d.Name</option>
+                }
+            </select>
+            <div class="form-text">목록에 없으면 "기타"를 고르고 사유를 직접 씁니다.</div>
+        </div>
         <div class="col-md-4">
-            <label asp-for="Reason" class="form-label">사유 <span id="reason-required" class="text-danger d-none">(필수)</span></label>
-            <input asp-for="Reason" class="form-control" maxlength="500" />
+            <label asp-for="Reason" class="form-label"><span id="reason-label">상세 사유</span> <span id="reason-required" class="text-danger d-none">(필수)</span></label>
+            <input asp-for="Reason" class="form-control" maxlength="500" placeholder="예: 외경 141.3mm, 2번 금형" />
         </div>
         <div class="col-auto">
             <button type="submit" class="btn btn-primary">검사 반영</button>

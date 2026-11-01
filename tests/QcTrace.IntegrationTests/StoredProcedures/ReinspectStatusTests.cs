@@ -48,7 +48,7 @@ public class ReinspectStatusTests(SqlServerFixture fixture)
         await _db.ShipLot(Db.Key(), lot, "shipper", 8);
         Assert.Equal("Inspected", await _db.StatusAsync(lot));
 
-        await _db.DisposeFailed(Db.Key(), lot, "inspector2", 2, "Scrap", "폐기");
+        await _db.DisposeFailed(Db.Key(), lot, "admin", 2, "Scrap", "폐기");
         Assert.Equal("Shipped", await _db.StatusAsync(lot));
     }
 }
