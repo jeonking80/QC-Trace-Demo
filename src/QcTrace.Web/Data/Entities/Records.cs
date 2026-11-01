@@ -121,3 +121,16 @@ public class RoleChange
     public string Reason { get; set; } = "";
     public DateTime CreatedAt { get; set; }
 }
+
+/// <summary>
+/// 검사 지연 알림(추가만). 검사 의뢰 후 48시간이 지나도 미검사가 남은 LOT을 처음 발견한 시각을 남긴다.
+/// LOT당 한 번만 기록한다. 해소 여부는 저장하지 않고 현재 수량으로 판단한다(미검사 0 또는 상태 변경 → 해소).
+/// </summary>
+public class DelayAlert
+{
+    public long Id { get; set; }
+    public int LotId { get; set; }
+    public DateTime InspectionRequestedAt { get; set; }
+    public int UninspectedAtDetection { get; set; }
+    public DateTime DetectedAt { get; set; }
+}

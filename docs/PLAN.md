@@ -90,6 +90,7 @@ R11은 2026-11-01 단위 6 검증에서 나온 문제(서버가 규격 밖 측�
 | 이력 원장 | 관리자 | LOT·작업자·기간 필터, CSV 내려받기 | Razor Pages |
 | 재고 대사 | 관리자 | LOT별 수량 등식 확인, 불일치 강조 | Razor Pages |
 | 기준정보 | 관리자 | 품목·검사 항목·사용자 관리, CSV 업로드 | Razor Pages |
+| 보고서·알림 | 관리자 | 검사 지연 알림(열린 것·해소된 것), 일일 엑셀 보고서 목록·내려받기·다시 만들기 | Razor Pages |
 
 대시보드만 프레임워크 없이 만드는 이유는 공고의 "HTML / JavaScript 이해도" 요건을 React 없이 보여주기 위해서입니다. 나머지는 .NET 기본 스택인 Razor Pages로 통일해 유지보수 환경과 맞춥니다.
 
@@ -142,6 +143,7 @@ R11은 2026-11-01 단위 6 검증에서 나온 문제(서버가 규격 밖 측�
 | Ledger | 불변 원장 | LotId, Kind, DeltaField, Delta, ActorId, Reason, SourceTable, SourceId, CreatedAt |
 | QcRequests | 멱등 요청 저장 | RequestKey (unique), Operation, BodyHash, ResponseJson, CreatedAt |
 | RoleChanges | 역할 변경 이력 (추가만) | UserId, RoleName, Change(Add·Remove), ActorId, Reason, CreatedAt |
+| DelayAlerts | 검사 지연 알림 기록 (추가만, LOT당 1건) | LotId (unique), InspectionRequestedAt, UninspectedAtDetection, DetectedAt |
 
 **설계 원칙**
 
@@ -156,6 +158,7 @@ R11은 2026-11-01 단위 6 검증에서 나온 문제(서버가 규격 밖 측�
 - LOT은 등록(`Registered`) 상태로 만들어지고, 생산 담당이 검사를 의뢰하면 `Waiting`이 되어 `InspectionRequestedAt`이 기록됩니다. 검사는 의뢰된 LOT만 받습니다.
 - 불합격 처리는 불합격 수량을 재검사(→ 미검사) 또는 폐기(→ `Scrapped`)로 옮기고, 둘 다 원장에 행을 남깁니다.
 - 역할은 R5(독립 승인)의 근거라서 바꿀 때마다 `RoleChanges`에 누가·언제·무엇을·왜를 남깁니다(2026-11-01 사용자 결정). 앱 계정은 `UserRoles`·`RoleChanges`에 직접 쓰지 못하고 `usp_SetUserRoles`로만 바꿉니다.
+- 자동화(Hosted Service `QcAutomation`)는 1분마다 깨어나 검사 지연 LOT을 처음 발견한 시각을 `DelayAlerts`에 남기고, 한국 시간 08:00(`Reports:RunAtKst`)이 지나면 전날 보고서 `qc-daily-yyyyMMdd.xlsx`를 `Reports:Path`(compose 볼륨 `reports`)에 만듭니다. 파일이 이미 있으면 다시 만들지 않고, 08:00에 앱이 꺼져 있었으면 다음에 켜질 때 만듭니다. 보고서 시트: 요약(기준일 실적은 `vw_DailyQcSummary`, 대기·지연·대사는 생성 시점), 검사 실적, 승인·출하, 검사 지연, 재고 대사(정상 제외).
 - 대사 화면의 R9 초과 보류 수량은 원장 사유 문구가 아니라 "검사 수량 − 그 검사가 미검사에서 실제로 뺀 수량"으로 계산합니다.
 
 **시드 데이터**

@@ -19,12 +19,17 @@ public sealed class ApiFactory(SqlServerFixture fixture) : WebApplicationFactory
 {
     public const string UserHeader = "X-Test-User";
 
+    /// <summary>테스트마다 따로 쓰는 보고서 폴더. 자동화(Hosted Service)는 꺼 두고 테스트가 RunOnceAsync를 직접 부른다.</summary>
+    public string ReportsPath { get; } = Path.Combine(Path.GetTempPath(), "qctrace-reports-" + Guid.NewGuid().ToString("N"));
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:QcTrace", fixture.AppConnectionString);
         builder.UseSetting("ConnectionStrings:QcTraceAdmin", fixture.AdminConnectionString);
         builder.UseSetting("Database:MigrateOnStartup", "false");
+        builder.UseSetting("Reports:Enabled", "false");
+        builder.UseSetting("Reports:Path", ReportsPath);
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton(fixture);
@@ -37,6 +42,12 @@ public sealed class ApiFactory(SqlServerFixture fixture) : WebApplicationFactory
                 o.DefaultForbidScheme = TestAuthHandler.SchemeName;
             });
         });
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        if (disposing && Directory.Exists(ReportsPath)) Directory.Delete(ReportsPath, recursive: true);
     }
 
     public HttpClient ClientFor(string userName)

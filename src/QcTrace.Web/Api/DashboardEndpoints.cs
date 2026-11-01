@@ -14,11 +14,10 @@ namespace QcTrace.Web.Api;
 /// </summary>
 public static class DashboardEndpoints
 {
-    public static readonly TimeSpan DelayThreshold = TimeSpan.FromHours(48);
+    public static TimeSpan DelayThreshold => QcQueries.DelayThreshold;
     public const int MaxActions = 50;
 
     public sealed record LotRef(int LotId, string LotNo, string ItemCode, string ItemName);
-    public sealed record DelayedLot(int LotId, string LotNo, string ItemCode, string ItemName, DateTime RequestedAt, int Hours, int Uninspected);
     public sealed record Rate(int Inspected, int Failed, decimal? FailRate);
     public sealed record DailyRow(DateOnly Date, int Inspected, int Failed, decimal? FailRate, int Shipped);
     public sealed record ActionItem(string Kind, string Severity, string Title, string Detail, string? LotNo, string Owner, string Href);
@@ -54,12 +53,7 @@ public static class DashboardEndpoints
             .ToListAsync();
 
         var waiting = open.Where(l => (l.Status == LotStatus.Waiting || l.Status == LotStatus.Inspecting) && l.q.Uninspected > 0).ToList();
-        var delayed = waiting
-            .Where(l => l.InspectionRequestedAt is { } at && now - at > DelayThreshold)
-            .OrderBy(l => l.InspectionRequestedAt)
-            .Select(l => new DelayedLot(l.Id, l.LotNo, l.ItemCode, l.ItemName, l.InspectionRequestedAt!.Value,
-                (int)(now - l.InspectionRequestedAt!.Value).TotalHours, l.q.Uninspected))
-            .ToList();
+        var delayed = await QcQueries.DelayedLotsAsync(db, now);
 
         var summary = await db.Database.SqlQuery<SummaryRow>($"""
             SELECT CAST(SummaryDate AS datetime2) AS SummaryDate, InspectedQty, FailedQty, ShippedQty, ShipmentCount
@@ -108,7 +102,7 @@ public static class DashboardEndpoints
     /// </summary>
     private static List<ActionItem> BuildActions(
         List<(int Id, string LotNo, string Status, string ItemCode, LotQuantity Q, DateTime? RequestedAt)> lots,
-        List<DelayedLot> delayed, List<string> mismatches, ClaimsPrincipal user, DateTime now)
+        List<QcQueries.DelayedLot> delayed, List<string> mismatches, ClaimsPrincipal user, DateTime now)
     {
         string Ledger(string lotNo) => "/Admin/Ledger?LotNo=" + Uri.EscapeDataString(lotNo);
         string Work(string role, string path, string lotNo) => user.IsInRole(role) ? path : Ledger(lotNo);

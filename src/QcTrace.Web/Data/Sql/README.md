@@ -4,6 +4,7 @@
 마이그레이션은 작성 시점 스키마를 고정해야 하므로, 이미 적용된 파일은 고치지 않고 `V2/`에 새 파일을 만들고 새 마이그레이션에서 실행합니다.
 
 - `V1/` → 마이그레이션 `StoredProcedures`: 검사·승인·출하 SP, 앱 역할
+- 마이그레이션 `DelayAlerts`(SQL 파일 없음): 검사 지연 알림 테이블, 추가 전용 트리거, 앱 계정은 INSERT만(UPDATE·DELETE 거부)
 - `V5/` → 마이그레이션 `DailySummary`: 일일 검사·출하 집계 뷰(`vw_DailyQcSummary`). 불합격률은 처음 판정 기준(정정 전)
 - `V4/` → 마이그레이션 `AdminTools`: 역할 변경 SP(`usp_SetUserRoles`), 재고 대사 뷰(`vw_LotReconciliation`), 앱 계정의 UserRoles·RoleChanges 직접 쓰기 거부
 - `V3/` → 마이그레이션 `SpecCheck`: 검사 SP에 R11 규격 검사 추가

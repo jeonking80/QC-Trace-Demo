@@ -29,6 +29,12 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddSingleton<QcCommands>();
 builder.Services.AddScoped<MasterData>();
+// 운영 자동화: 일일 엑셀 보고서(매일 Reports:RunAtKst, 기본 08:00 한국 시간), 검사 지연 알림
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<ReportStorage>();
+builder.Services.AddScoped<DailyReport>();
+builder.Services.AddSingleton<QcAutomation>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<QcAutomation>());
 
 // Razor 출력에서 한글을 &#x...; 문자 참조로 바꾸지 않는다
 builder.Services.Configure<WebEncoderOptions>(options =>

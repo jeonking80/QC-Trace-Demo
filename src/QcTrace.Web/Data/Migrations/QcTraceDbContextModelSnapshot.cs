@@ -225,6 +225,43 @@ namespace QcTrace.Web.Data.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
+            modelBuilder.Entity("QcTrace.Web.Data.Entities.DelayAlert", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("DetectedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<DateTime>("InspectionRequestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LotId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UninspectedAtDetection")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DetectedAt");
+
+                    b.HasIndex("LotId")
+                        .IsUnique();
+
+                    b.ToTable("DelayAlerts", null, t =>
+                        {
+                            t.HasTrigger("TR_DelayAlerts_AppendOnly");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
             modelBuilder.Entity("QcTrace.Web.Data.Entities.Inspection", b =>
                 {
                     b.Property<long>("Id")
@@ -778,6 +815,15 @@ namespace QcTrace.Web.Data.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("QcTrace.Web.Data.Entities.DelayAlert", b =>
+                {
+                    b.HasOne("QcTrace.Web.Data.Entities.Lot", null)
+                        .WithMany()
+                        .HasForeignKey("LotId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

@@ -21,6 +21,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       DataProtection__KeysPath: /app/keys
+      # 일일 엑셀 보고서 폴더(볼륨)와 생성 시각(한국 시간)
+      Reports__Path: /app/reports
+      Reports__RunAtKst: "08:00"
       # 관리자 연결: 시작할 때 마이그레이션·앱 계정 생성·시드에만 쓴다
       ConnectionStrings__QcTraceAdmin: "Server=db,1433;Database=QcTrace;User Id=sa;Password=${MSSQL_SA_PASSWORD:-QcTrace!Dev2026};TrustServerCertificate=True;Encrypt=True"
       # 앱 실행 연결: 최소 권한 계정. 수량·이력 테이블은 저장 프로시저로만 바뀐다
@@ -29,6 +32,7 @@ services:
       - "8080:8080"
     volumes:
       - dp-keys:/app/keys
+      - reports:/app/reports
     depends_on:
       db:
         condition: service_healthy
@@ -36,3 +40,4 @@ services:
 volumes:
   mssql-data:
   dp-keys:
+  reports:

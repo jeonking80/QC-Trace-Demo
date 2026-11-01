@@ -20,6 +20,7 @@ public class QcTraceDbContext(DbContextOptions<QcTraceDbContext> options)
     public DbSet<LedgerEntry> Ledger => Set<LedgerEntry>();
     public DbSet<QcRequest> QcRequests => Set<QcRequest>();
     public DbSet<RoleChange> RoleChanges => Set<RoleChange>();
+    public DbSet<DelayAlert> DelayAlerts => Set<DelayAlert>();
 
     private const string UtcNow = "SYSUTCDATETIME()";
 
@@ -199,6 +200,15 @@ public class QcTraceDbContext(DbContextOptions<QcTraceDbContext> options)
             e.HasIndex(x => x.CreatedAt);
             UserFk(e, x => x.UserId);
             UserFk(e, x => x.ActorId);
+        });
+
+        b.Entity<DelayAlert>(e =>
+        {
+            e.ToTable("DelayAlerts", t => t.HasTrigger(AppendOnlyTriggerName("DelayAlerts")));
+            e.Property(x => x.DetectedAt).HasDefaultValueSql(UtcNow);
+            e.HasIndex(x => x.LotId).IsUnique();
+            e.HasIndex(x => x.DetectedAt);
+            LotFk(e, x => x.LotId);
         });
 
         b.Entity<QcRequest>(e =>
