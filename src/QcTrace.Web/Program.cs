@@ -11,6 +11,7 @@ using QcTrace.Web.Auth;
 using QcTrace.Web.Data;
 using QcTrace.Web.Data.Entities;
 using QcTrace.Web.Health;
+using QcTrace.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,7 @@ builder.Services.AddRazorPages(options =>
 });
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.AddSingleton<QcCommands>();
 
 // Razor 출력에서 한글을 &#x...; 문자 참조로 바꾸지 않는다
 builder.Services.Configure<WebEncoderOptions>(options =>
@@ -109,6 +111,7 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapLotEndpoints();
+app.MapCommandEndpoints();
 
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
@@ -131,3 +134,6 @@ app.MapHealthChecks("/health", new HealthCheckOptions
 }).AllowAnonymous();
 
 await app.RunAsync();
+
+// 통합 테스트(WebApplicationFactory)가 진입점을 찾을 수 있게 공개한다
+public partial class Program;

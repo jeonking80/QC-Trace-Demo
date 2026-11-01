@@ -1,7 +1,42 @@
 @page
+@model QcTrace.Web.Pages.Shipments.IndexModel
+@using QcTrace.Web.Services
 @{
     ViewData["Title"] = "출하 실적";
 }
 
 <h1 class="h3">출하 실적</h1>
-<p class="text-muted">출하 담당 전용 화면입니다. 출하 실적 입력은 작업 단위 6에서 구현합니다.</p>
+<p class="text-muted small">승인된 잔량(예약) 안에서만 출하할 수 있습니다(R7).</p>
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+<table class="table table-sm">
+    <thead><tr><th>LOT</th><th>품목</th><th>승인 잔량</th><th>출하</th></tr></thead>
+    <tbody>
+    @foreach (var lot in Model.Lots)
+    {
+        <tr>
+            <td>@lot.LotNo</td>
+            <td>@lot.Item.ItemCode <span class="text-muted small">@lot.Item.Name</span></td>
+            <td><strong>@lot.Quantity!.Reserved</strong></td>
+            <td>
+                <form method="post" class="d-flex gap-1">
+                    <input type="hidden" name="lotId" value="@lot.Id" />
+                    <input type="hidden" name="requestKey" value="@QcTrace.Web.Pages.QcPageModel.NewRequestKey()" />
+                    <input type="number" name="qty" value="@lot.Quantity.Reserved" min="1" class="form-control form-control-sm" style="width:6rem" />
+                    <input name="destination" placeholder="출하처" class="form-control form-control-sm" maxlength="100" required />
+                    <button type="submit" class="btn btn-sm btn-primary">출하</button>
+                </form>
+            </td>
+        </tr>
+    }
+    @if (Model.Lots.Count == 0) { <tr><td colspan="4" class="text-muted">출하할 LOT이 없습니다.</td></tr> }
+    </tbody>
+</table>
+
+@if (Model.Recent.Count > 0)
+{
+    <h2 class="h6 mt-4">최근 출하</h2>
+    <ul class="small">
+        @foreach (var s in Model.Recent) { <li>@Kst.Format(s.CreatedAt) · LOT #@s.LotId · @(s.Qty)개 · @s.Destination</li> }
+    </ul>
+}

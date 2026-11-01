@@ -418,9 +418,9 @@ namespace QcTrace.Web.Data.Migrations
                         {
                             t.HasTrigger("TR_Ledger_AppendOnly");
 
-                            t.HasCheckConstraint("CK_Ledger_DeltaField", "[DeltaField] IN ('Uninspected', 'Passed', 'Failed', 'Held', 'Shipped', 'Reserved')");
+                            t.HasCheckConstraint("CK_Ledger_DeltaField", "[DeltaField] IN ('Uninspected', 'Passed', 'Failed', 'Held', 'Shipped', 'Reserved', 'Scrapped')");
 
-                            t.HasCheckConstraint("CK_Ledger_Kind", "[Kind] IN ('Produce', 'Inspect', 'Correct', 'Approve', 'Ship')");
+                            t.HasCheckConstraint("CK_Ledger_Kind", "[Kind] IN ('Produce', 'Request', 'Inspect', 'Correct', 'Reinspect', 'Scrap', 'Approve', 'Ship')");
 
                             t.HasCheckConstraint("CK_Ledger_Reason", "LEN(LTRIM(RTRIM([Reason]))) > 0");
                         });
@@ -514,6 +514,11 @@ namespace QcTrace.Web.Data.Migrations
                     b.Property<int>("Reserved")
                         .HasColumnType("int");
 
+                    b.Property<int>("Scrapped")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
                     b.Property<int>("Shipped")
                         .HasColumnType("int");
 
@@ -529,7 +534,7 @@ namespace QcTrace.Web.Data.Migrations
 
                     b.ToTable("LotQuantities", t =>
                         {
-                            t.HasCheckConstraint("CK_LotQuantities_NonNegative", "[Uninspected] >= 0 AND [Passed] >= 0 AND [Failed] >= 0 AND [Held] >= 0 AND [Shipped] >= 0 AND [Reserved] >= 0");
+                            t.HasCheckConstraint("CK_LotQuantities_NonNegative", "[Uninspected] >= 0 AND [Passed] >= 0 AND [Failed] >= 0 AND [Held] >= 0 AND [Shipped] >= 0 AND [Reserved] >= 0 AND [Scrapped] >= 0");
                         });
                 });
 

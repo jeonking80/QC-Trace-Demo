@@ -1,7 +1,45 @@
 @page
+@model QcTrace.Web.Pages.Inspections.IndexModel
+@using QcTrace.Web.Services
 @{
-    ViewData["Title"] = "검사 입력";
+    ViewData["Title"] = "검사";
 }
 
-<h1 class="h3">검사 입력</h1>
-<p class="text-muted">검사자 전용 화면입니다. 항목별 측정값 입력과 부분 검사는 작업 단위 6에서 구현합니다.</p>
+<h1 class="h3">검사</h1>
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+<h2 class="h5 mt-3">검사할 LOT <span class="text-muted small">(의뢰가 오래된 순, 48시간 초과는 노란색)</span></h2>
+<table class="table table-sm">
+    <thead><tr><th>LOT</th><th>품목</th><th>상태</th><th>남은 미검사</th><th>의뢰 시각</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var lot in Model.ToInspect)
+    {
+        <tr class="@(QcTrace.Web.Pages.Inspections.IndexModel.IsDelayed(lot) ? "delayed" : "")">
+            <td>@lot.LotNo</td>
+            <td>@lot.Item.ItemCode <span class="text-muted small">@lot.Item.Name</span></td>
+            <td><partial name="_LotStatus" model="lot.Status" /></td>
+            <td><strong>@lot.Quantity!.Uninspected</strong> / @lot.ProducedQty</td>
+            <td class="small">@Kst.Format(lot.InspectionRequestedAt)</td>
+            <td><a class="btn btn-sm btn-primary" asp-page="./Input" asp-route-lotId="@lot.Id">검사 입력</a></td>
+        </tr>
+    }
+    @if (Model.ToInspect.Count == 0) { <tr><td colspan="6" class="text-muted">검사할 LOT이 없습니다.</td></tr> }
+    </tbody>
+</table>
+
+<h2 class="h5 mt-4">불합격 처리 대기</h2>
+<table class="table table-sm">
+    <thead><tr><th>LOT</th><th>품목</th><th>불합격</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var lot in Model.ToDispose)
+    {
+        <tr>
+            <td>@lot.LotNo</td>
+            <td>@lot.Item.ItemCode <span class="text-muted small">@lot.Item.Name</span></td>
+            <td class="text-danger"><strong>@lot.Quantity!.Failed</strong></td>
+            <td><a class="btn btn-sm btn-outline-danger" asp-page="./Dispose" asp-route-lotId="@lot.Id">불합격 처리</a></td>
+        </tr>
+    }
+    @if (Model.ToDispose.Count == 0) { <tr><td colspan="4" class="text-muted">처리할 불합격이 없습니다.</td></tr> }
+    </tbody>
+</table>

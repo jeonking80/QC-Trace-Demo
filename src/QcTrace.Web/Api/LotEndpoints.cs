@@ -50,6 +50,7 @@ public static class LotEndpoints
                         l.Quantity.Held,
                         l.Quantity.Shipped,
                         l.Quantity.Reserved,
+                        l.Quantity.Scrapped,
                         Available = l.Quantity.Passed - l.Quantity.Shipped - l.Quantity.Reserved
                     }
                 })

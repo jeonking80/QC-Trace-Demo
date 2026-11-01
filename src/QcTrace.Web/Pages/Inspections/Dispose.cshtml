@@ -1,0 +1,50 @@
+@page "{lotId:int}"
+@model QcTrace.Web.Pages.Inspections.DisposeModel
+@using QcTrace.Web.Services
+@{
+    ViewData["Title"] = "불합격 처리";
+}
+
+<h1 class="h3">불합격 처리 <small class="text-muted">@Model.Lot.LotNo</small></h1>
+<p class="small"><partial name="_QtyBadges" model="Model.Lot.Quantity" /></p>
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+@if (Model.FailedInspections.Count > 0)
+{
+    <h2 class="h6">불합격 기록</h2>
+    <ul class="small">
+        @foreach (var i in Model.FailedInspections)
+        {
+            <li>@Kst.Format(i.CreatedAt) · @(i.Qty)개 · @i.Reason</li>
+        }
+    </ul>
+}
+
+<form method="post" class="row g-2 align-items-end">
+    <input type="hidden" asp-for="RequestKey" />
+    <div class="col-auto">
+        <label class="form-label">처리 방법</label>
+        <div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" asp-for="Action" value="Reinspect" id="act-re" />
+                <label class="form-check-label" for="act-re">재검사 요청</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" asp-for="Action" value="Scrap" id="act-scrap" />
+                <label class="form-check-label" for="act-scrap">폐기</label>
+            </div>
+        </div>
+    </div>
+    <div class="col-auto">
+        <label asp-for="Qty" class="form-label">수량 (최대 @Model.Lot.Quantity!.Failed)</label>
+        <input asp-for="Qty" type="number" min="1" max="@Model.Lot.Quantity!.Failed" class="form-control" style="width:8rem" />
+    </div>
+    <div class="col-md-5">
+        <label asp-for="Reason" class="form-label">사유 <span class="text-danger">(필수)</span></label>
+        <input asp-for="Reason" class="form-control" maxlength="500" required />
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-danger">처리</button>
+        <a class="btn btn-link" asp-page="./Index">목록</a>
+    </div>
+</form>

@@ -1,7 +1,46 @@
 @page
+@model QcTrace.Web.Pages.Approvals.IndexModel
 @{
     ViewData["Title"] = "출하 승인";
 }
 
 <h1 class="h3">출하 승인</h1>
-<p class="text-muted">승인권자 전용 화면입니다. 출하 승인은 작업 단위 6에서 구현합니다.</p>
+<p class="text-muted small">출하 가능 = 합격 − 출하 완료 − 출하 예약. 검사 전 수량은 승인할 수 없습니다(R1).</p>
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+<table class="table table-sm">
+    <thead><tr><th>LOT</th><th>품목</th><th>수량</th><th>출하 가능</th><th>승인</th><th>반려</th></tr></thead>
+    <tbody>
+    @foreach (var row in Model.Rows)
+    {
+        var lot = row.Lot;
+        <tr>
+            <td>@lot.LotNo <partial name="_LotStatus" model="lot.Status" /></td>
+            <td>@lot.Item.ItemCode <span class="text-muted small">@lot.Item.Name</span></td>
+            <td class="small"><partial name="_QtyBadges" model="lot.Quantity" /></td>
+            <td><strong>@row.Available</strong></td>
+            <td>
+                <form method="post" asp-page-handler="Approve" class="d-flex gap-1">
+                    <input type="hidden" name="lotId" value="@lot.Id" />
+                    <input type="hidden" name="requestKey" value="@QcTrace.Web.Pages.QcPageModel.NewRequestKey()" />
+                    <input type="number" name="qty" value="@row.Available" min="1" class="form-control form-control-sm" style="width:6rem" disabled="@row.InspectedByMe" />
+                    <button type="submit" class="btn btn-sm btn-success" disabled="@row.InspectedByMe">승인</button>
+                </form>
+                @if (row.InspectedByMe)
+                {
+                    <div class="small text-danger">본인이 검사한 LOT은 승인할 수 없습니다. 다른 승인권자가 처리해야 합니다 (R5).</div>
+                }
+            </td>
+            <td>
+                <form method="post" asp-page-handler="Reject" class="d-flex gap-1">
+                    <input type="hidden" name="lotId" value="@lot.Id" />
+                    <input type="hidden" name="requestKey" value="@QcTrace.Web.Pages.QcPageModel.NewRequestKey()" />
+                    <input name="reason" placeholder="반려 사유" class="form-control form-control-sm" maxlength="500" required disabled="@row.InspectedByMe" />
+                    <button type="submit" class="btn btn-sm btn-outline-secondary" disabled="@row.InspectedByMe">반려</button>
+                </form>
+            </td>
+        </tr>
+    }
+    @if (Model.Rows.Count == 0) { <tr><td colspan="6" class="text-muted">승인할 LOT이 없습니다.</td></tr> }
+    </tbody>
+</table>

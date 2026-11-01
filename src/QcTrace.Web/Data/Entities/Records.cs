@@ -55,10 +55,13 @@ public class Shipment
 public static class LedgerKind
 {
     public const string Produce = "Produce";
+    public const string Request = "Request";       // 검사 의뢰 (수량 변화 없음, Delta 0)
     public const string Inspect = "Inspect";
     public const string Correct = "Correct";
     public const string Approve = "Approve";
     public const string Ship = "Ship";
+    public const string Reinspect = "Reinspect";   // 불합격 → 미검사 (재검사 요청)
+    public const string Scrap = "Scrap";           // 불합격 → 폐기
 }
 
 public static class LedgerField
@@ -69,6 +72,7 @@ public static class LedgerField
     public const string Held = "Held";
     public const string Shipped = "Shipped";
     public const string Reserved = "Reserved";
+    public const string Scrapped = "Scrapped";
 }
 
 /// <summary>불변 원장. LotQuantities의 각 열은 이 테이블의 DeltaField별 Delta 합으로 다시 계산할 수 있다.</summary>

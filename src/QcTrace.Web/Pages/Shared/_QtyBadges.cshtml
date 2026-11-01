@@ -1,0 +1,11 @@
+@model QcTrace.Web.Data.Entities.LotQuantity?
+@if (Model is not null)
+{
+    <span class="qty"><span class="text-muted">미검사</span> @Model.Uninspected</span>
+    <span class="qty"><span class="text-success">합격</span> @Model.Passed</span>
+    <span class="qty"><span class="text-danger">불합격</span> @Model.Failed</span>
+    <span class="qty"><span class="text-warning">보류</span> @Model.Held</span>
+    @if (Model.Scrapped > 0) { <span class="qty"><span class="text-secondary">폐기</span> @Model.Scrapped</span> }
+    <span class="qty"><span class="text-primary">예약</span> @Model.Reserved</span>
+    <span class="qty"><span class="text-dark">출하</span> @Model.Shipped</span>
+}

@@ -23,6 +23,9 @@ public sealed class SqlServerFixture : IAsyncLifetime
     public Dictionary<string, string> UserIds { get; } = new();
 
     private int _itemId;
+    public int ItemId => _itemId;
+
+    public IEnumerable<string> RolesOf(string userName) => TestUsers.Single(u => u.UserName == userName).Roles;
 
     public async Task InitializeAsync()
     {
@@ -59,6 +62,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
         ("approver", ["Approver"]),
         ("inspector_approver", ["Inspector", "Approver"]),
         ("shipper", ["Shipper"]),
+        ("norole", []),
     ];
 
     private async Task SeedUsersAndItemAsync()
@@ -95,7 +99,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
     /// <summary>
     /// 검사 대기 LOT 하나를 만든다. LOT 등록 SP는 단위 6 범위라 여기서는 관리자 연결로 직접 넣는다(Ledger Produce 포함).
     /// </summary>
-    public async Task<int> CreateLotAsync(int producedQty)
+    public async Task<int> CreateLotAsync(int producedQty, string status = "Waiting")
     {
         await using var connection = new SqlConnection(AdminConnectionString);
         await connection.OpenAsync();
@@ -104,7 +108,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
             BEGIN TRAN;
             DECLARE @id int;
             INSERT INTO Lots (LotNo, ItemId, ProducedQty, ProducedOn, Shift, Status, CreatedById, InspectionRequestedAt)
-            VALUES (@lotNo, @itemId, @qty, CAST(SYSUTCDATETIME() AS date), N'A조', N'Waiting', @producer, SYSUTCDATETIME());
+            VALUES (@lotNo, @itemId, @qty, CAST(SYSUTCDATETIME() AS date), N'A조', @status, @producer, IIF(@status = N'Registered', NULL, SYSUTCDATETIME()));
             SET @id = SCOPE_IDENTITY();
             INSERT INTO LotQuantities (LotId, Uninspected, Passed, Failed, Held, Shipped, Reserved) VALUES (@id, @qty, 0, 0, 0, 0, 0);
             INSERT INTO Ledger (LotId, Kind, DeltaField, Delta, ActorId, Reason, SourceTable, SourceId)
@@ -116,6 +120,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
         command.Parameters.AddWithValue("@itemId", _itemId);
         command.Parameters.AddWithValue("@qty", producedQty);
         command.Parameters.AddWithValue("@producer", UserIds["producer"]);
+        command.Parameters.AddWithValue("@status", status);
         return (int)(await command.ExecuteScalarAsync())!;
     }
 

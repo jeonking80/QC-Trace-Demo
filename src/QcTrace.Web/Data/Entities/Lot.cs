@@ -32,7 +32,7 @@ public class Lot
 
 /// <summary>
 /// LOT별 수량 지표 (조회용). Ledger 합과 항상 일치해야 한다.
-/// 생산 수량 = Uninspected + Passed + Failed + Held, 출하 가능 = Passed - Shipped - Reserved
+/// 생산 수량 = Uninspected + Passed + Failed + Held + Scrapped, 출하 가능 = Passed - Shipped - Reserved
 /// </summary>
 public class LotQuantity
 {
@@ -43,6 +43,8 @@ public class LotQuantity
     public int Held { get; set; }
     public int Shipped { get; set; }
     public int Reserved { get; set; }
+    /// <summary>불합격 처리에서 폐기로 확정한 수량</summary>
+    public int Scrapped { get; set; }
     public DateTime UpdatedAt { get; set; }
 
     public Lot Lot { get; set; } = null!;

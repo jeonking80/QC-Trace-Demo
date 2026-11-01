@@ -1,0 +1,13 @@
+@model string
+@{
+    var (label, css) = Model switch
+    {
+        "Registered" => ("등록", "bg-secondary"),
+        "Waiting" => ("검사 대기", "bg-info text-dark"),
+        "Inspecting" => ("부분 검사", "bg-warning text-dark"),
+        "Inspected" => ("검사 완료", "bg-success"),
+        "Shipped" => ("출하 완료", "bg-dark"),
+        _ => (Model, "bg-light text-dark")
+    };
+}
+<span class="badge status-badge @css">@label</span>

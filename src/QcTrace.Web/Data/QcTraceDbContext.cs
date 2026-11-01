@@ -100,10 +100,12 @@ public class QcTraceDbContext(DbContextOptions<QcTraceDbContext> options)
         {
             e.HasKey(x => x.LotId);
             e.Property(x => x.UpdatedAt).HasDefaultValueSql(UtcNow);
+            // SP·시드 스크립트가 열을 생략해도 0이 들어가게 한다
+            e.Property(x => x.Scrapped).HasDefaultValue(0);
             e.HasOne(x => x.Lot).WithOne(x => x.Quantity)
                 .HasForeignKey<LotQuantity>(x => x.LotId).OnDelete(DeleteBehavior.Restrict);
             e.ToTable(t => t.HasCheckConstraint("CK_LotQuantities_NonNegative",
-                "[Uninspected] >= 0 AND [Passed] >= 0 AND [Failed] >= 0 AND [Held] >= 0 AND [Shipped] >= 0 AND [Reserved] >= 0"));
+                "[Uninspected] >= 0 AND [Passed] >= 0 AND [Failed] >= 0 AND [Held] >= 0 AND [Shipped] >= 0 AND [Reserved] >= 0 AND [Scrapped] >= 0"));
         });
 
         b.Entity<Inspection>(e =>
@@ -162,9 +164,9 @@ public class QcTraceDbContext(DbContextOptions<QcTraceDbContext> options)
             e.ToTable("Ledger", t =>
             {
                 t.HasTrigger(AppendOnlyTriggerName("Ledger"));
-                t.HasCheckConstraint("CK_Ledger_Kind", "[Kind] IN ('Produce', 'Inspect', 'Correct', 'Approve', 'Ship')");
+                t.HasCheckConstraint("CK_Ledger_Kind", "[Kind] IN ('Produce', 'Request', 'Inspect', 'Correct', 'Reinspect', 'Scrap', 'Approve', 'Ship')");
                 t.HasCheckConstraint("CK_Ledger_DeltaField",
-                    "[DeltaField] IN ('Uninspected', 'Passed', 'Failed', 'Held', 'Shipped', 'Reserved')");
+                    "[DeltaField] IN ('Uninspected', 'Passed', 'Failed', 'Held', 'Shipped', 'Reserved', 'Scrapped')");
                 // R10: 사유 필수
                 t.HasCheckConstraint("CK_Ledger_Reason", "LEN(LTRIM(RTRIM([Reason]))) > 0");
             });

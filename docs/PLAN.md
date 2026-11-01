@@ -66,10 +66,10 @@ Oct 30, 2026 · @사장
 
 **수량 지표** (LOT 단위)
 
-- 생산 수량 = 미검사 + 합격 + 불합격 + 보류
+- 생산 수량 = 미검사 + 합격 + 불합격 + 보류 + 폐기
 - 출하 가능 = 합격 − 출하 완료 − 출하 예약
 - 이 등식이 깨지면 대사 화면에 불일치로 표시합니다.
-- 생산 수량을 넘겨 검사된 초과분(R9)은 보류에 더해지므로 "생산 = 미검사 + 합격 + 불합격 + 보류" 등식이 초과분만큼 어긋납니다. 이 경우는 실제 불일치와 구분해 대사 화면에 '초과 보류'로 따로 표시합니다.
+- 생산 수량을 넘겨 검사된 초과분(R9)은 보류에 더해지므로 "생산 = 미검사 + 합격 + 불합격 + 보류" 등식(폐기 포함)이 초과분만큼 어긋납니다. 이 경우는 실제 불일치와 구분해 대사 화면에 '초과 보류'로 따로 표시합니다.
 
 ## 4. 화면 구성
 
@@ -110,7 +110,7 @@ Oct 30, 2026 · @사장
 
 **MS-SQL에서 보여줄 것**
 
-- 저장 프로시저 `usp_ApplyInspection`, `usp_ApproveShipment`, `usp_ShipLot`: 트랜잭션, `UPDLOCK` 행 잠금, 멱등 키 검사
+- 저장 프로시저 `usp_RegisterLot`, `usp_RequestInspection`, `usp_ApplyInspection`, `usp_DisposeFailed`, `usp_ApproveShipment`, `usp_ShipLot`: 트랜잭션, `UPDLOCK` 행 잠금, 멱등 키 검사
 - 유니크 제약 `(RequestKey)`로 중복 반영 차단
 - 원장 테이블은 INSERT만 허용, UPDATE·DELETE 트리거로 거부
 - 조회 인덱스: LOT 상태별, 기간별 원장 조회
@@ -130,7 +130,7 @@ Oct 30, 2026 · @사장
 | InspectionItems | 품목별 검사 항목 | ItemId, Name, Lower, Upper, Unit |
 | Users / Roles | 사용자·역할 (Identity) | UserName, Role (생산·검사·승인·출하·관리자) |
 | Lots | 생산 LOT 현재 상태 | LotNo, ItemId, ProducedQty, Status, InspectionRequestedAt, RowVersion |
-| LotQuantities | LOT별 수량 지표 | LotId, Uninspected, Passed, Failed, Held, Shipped, Reserved |
+| LotQuantities | LOT별 수량 지표 | LotId, Uninspected, Passed, Failed, Held, Scrapped, Shipped, Reserved |
 | Inspections | 검사 실적 (추가만) | LotId, InspectorId, Qty, Verdict, MeasuredJson, Reason, CorrectsInspectionId, CreatedAt |
 | ShipmentApprovals | 출하 승인 (추가만) | LotId, ApproverId, ApprovedQty, Decision, Reason, CreatedAt |
 | Shipments | 출하 실적 (추가만) | LotId, ShipperId, Qty, Destination, CreatedAt |
@@ -145,8 +145,10 @@ Oct 30, 2026 · @사장
 - 시각은 UTC로 저장하고 화면에서 한국 시간으로 표시합니다.
 - `Lots.InspectionRequestedAt`은 검사 의뢰 시각입니다. 검사 지연(48시간 초과) 판단의 기준입니다.
 - `Inspections.CorrectsInspectionId`는 정정 행이 가리키는 원래 검사 행입니다. 원 행은 그대로 남습니다.
-- `QcRequests.Operation`은 요청 종류(검사·승인·출하)입니다. 같은 키가 다른 작업에 쓰였는지 구분합니다.
+- `QcRequests.Operation`은 요청 종류(등록·의뢰·검사·불합격 처리·승인·출하)입니다. 같은 키가 다른 작업에 쓰였는지 구분합니다.
 - 출하 승인은 `Reserved`(출하 예약)를 늘리고, 출하는 `Reserved`를 줄인 만큼 `Shipped`를 늘립니다. 그래서 출하 가능 = 합격 − 출하 완료 − 출하 예약이 승인 전후 모두 성립합니다.
+- LOT은 등록(`Registered`) 상태로 만들어지고, 생산 담당이 검사를 의뢰하면 `Waiting`이 되어 `InspectionRequestedAt`이 기록됩니다. 검사는 의뢰된 LOT만 받습니다.
+- 불합격 처리는 불합격 수량을 재검사(→ 미검사) 또는 폐기(→ `Scrapped`)로 옮기고, 둘 다 원장에 행을 남깁니다.
 
 **시드 데이터**
 
