@@ -23,7 +23,7 @@ public sealed partial class DailyReport(QcTraceDbContext db, ReportStorage stora
         public int RejectedCount { get; set; }
         public int ShippedQty { get; set; }
         public int ShipmentCount { get; set; }
-        public decimal? FailRate { get; set; }
+        [Precision(9, 4)] public decimal? FailRate { get; set; }   // 뷰의 decimal(9,4)와 같게(정밀도 미지정 경고 제거)
     }
 
     private sealed class ReconRow

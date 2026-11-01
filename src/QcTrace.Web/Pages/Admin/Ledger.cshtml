@@ -8,6 +8,7 @@
         ["View"] = Model.View, ["LotNo"] = Model.LotNo, ["ActorId"] = Model.ActorId, ["Kind"] = Model.Kind,
         ["From"] = Model.From?.ToString("yyyy-MM-dd"), ["To"] = Model.To?.ToString("yyyy-MM-dd"),
     };
+    var rawRoutes = new Dictionary<string, string?>(routes) { ["Show"] = Model.IsRaw ? null : "raw" };
 }
 
 <h1 class="h3">이력 원장</h1>
@@ -21,6 +22,7 @@
 
 <form method="get" class="row g-2 align-items-end mb-3">
     <input type="hidden" name="View" value="@Model.View" />
+    <input type="hidden" name="Show" value="@Model.Show" />
     @if (!Model.IsRoleView)
     {
         <div class="col-md-2">
@@ -63,13 +65,26 @@
 
 <div class="d-flex justify-content-between align-items-center mb-2">
     <div class="small">
-        @(Model.TotalCount)건
+        @if (Model.IsRoleView || Model.IsRaw)
+        {
+            @(Model.TotalCount)<text>건</text>
+        }
+        else
+        {
+            <text>작업 @(Model.Events.Count)건</text> <span class="text-muted">(원장 @(Model.TotalCount)행)</span>
+        }
         @if (Model.TotalCount > QcTrace.Web.Pages.Admin.LedgerModel.ScreenLimit)
         {
-            <span class="text-muted">· 화면에는 최근 @(QcTrace.Web.Pages.Admin.LedgerModel.ScreenLimit)건만 보입니다. 전체는 CSV로 내려받으세요.</span>
+            <span class="text-muted">· 화면에는 최근 원장 @(QcTrace.Web.Pages.Admin.LedgerModel.ScreenLimit)행만 보입니다. 전체는 CSV로 내려받으세요.</span>
         }
     </div>
-    <a class="btn btn-sm btn-outline-success" asp-page-handler="Csv" asp-all-route-data="routes">CSV 내려받기</a>
+    <div class="d-flex gap-2">
+        @if (!Model.IsRoleView)
+        {
+            <a class="btn btn-sm btn-outline-secondary" id="toggle-raw" asp-page="./Ledger" asp-all-route-data="rawRoutes">@(Model.IsRaw ? "한 줄로 보기" : "원장 행 그대로 보기")</a>
+        }
+        <a class="btn btn-sm btn-outline-success" asp-page-handler="Csv" asp-all-route-data="routes">CSV 내려받기</a>
+    </div>
 </div>
 
 @if (Model.IsRoleView)
@@ -91,22 +106,46 @@
         </tbody>
     </table>
 }
+else if (!Model.IsRaw)
+{
+    <p class="small text-muted mb-1">
+        한 번의 작업(예: 폐기 15개)은 원장에 "불합격 −15, 폐기 +15" 두 행으로 남습니다. 여기서는 읽기 쉽게 한 줄로 묶어 보여 줍니다.
+        @(Model.OldestFirst ? "LOT을 골랐으므로 일어난 순서(오래된 것부터)입니다." : "최근 것부터입니다. LOT 번호로 거르면 일어난 순서로 보입니다.")
+    </p>
+    <table class="table table-sm" id="ledger-events">
+        <thead><tr><th>시각</th><th>LOT</th><th>작업</th><th>수량 이동</th><th>작업자</th><th>사유</th><th>근거 기록</th></tr></thead>
+        <tbody>
+        @foreach (var e in Model.Events)
+        {
+            <tr>
+                <td class="text-nowrap">@Kst.Format(e.CreatedAt)</td>
+                <td><partial name="_LotLink" model="e.LotNo" /></td>
+                <td class="text-nowrap">@e.KindLabel</td>
+                <td>@e.Text</td>
+                <td>@e.Actor</td>
+                <td>@e.Reason</td>
+                <td class="small text-muted">@e.Source</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
 else
 {
-    <table class="table table-sm">
-        <thead><tr><th>시각</th><th>LOT</th><th>종류</th><th>수량 항목</th><th class="text-end">증감</th><th>작업자</th><th>사유</th><th>원본</th></tr></thead>
+    <table class="table table-sm" id="ledger-raw">
+        <thead><tr><th>시각</th><th>LOT</th><th>종류</th><th>수량 항목</th><th class="text-end">증감</th><th>작업자</th><th>사유</th><th>근거 기록</th></tr></thead>
         <tbody>
         @foreach (var r in Model.Rows)
         {
             <tr>
                 <td class="text-nowrap">@Kst.Format(r.CreatedAt)</td>
-                <td><a asp-page="./Ledger" asp-route-lotNo="@r.LotNo">@r.LotNo</a></td>
+                <td><partial name="_LotLink" model="r.LotNo" /></td>
                 <td>@QcTrace.Web.Pages.Admin.LedgerModel.KindLabel(r.Kind)</td>
-                <td>@r.DeltaField</td>
+                <td>@LedgerText.FieldLabel(r.DeltaField)</td>
                 <td class="text-end @(r.Delta < 0 ? "text-danger" : "")">@(r.Delta > 0 ? "+" : "")@r.Delta</td>
                 <td>@r.Actor</td>
                 <td>@r.Reason</td>
-                <td class="small text-muted">@r.SourceTable @r.SourceId</td>
+                <td class="small text-muted">@LedgerText.SourceLabel(r.SourceTable, r.SourceId)</td>
             </tr>
         }
         </tbody>

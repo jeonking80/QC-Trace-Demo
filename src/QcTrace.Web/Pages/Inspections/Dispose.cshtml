@@ -5,7 +5,7 @@
     ViewData["Title"] = "불합격 처리";
 }
 
-<h1 class="h3">불합격 처리 <small class="text-muted">@Model.Lot.LotNo</small></h1>
+<h1 class="h3">불합격 처리 <small><partial name="_LotLink" model="Model.Lot.LotNo" /></small></h1>
 <p class="small"><partial name="_QtyBadges" model="Model.Lot.Quantity" /></p>
 <partial name="_StatusMessage" model="Model.StatusMessage" />
 

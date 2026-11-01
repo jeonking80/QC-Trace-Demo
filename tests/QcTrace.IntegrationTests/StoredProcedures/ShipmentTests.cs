@@ -81,8 +81,9 @@ public class ShipmentTests(SqlServerFixture fixture)
         var shipped = await _db.ShipLot(Db.Key(), lot, "shipper", 95);
 
         Assert.Equal(new Quantities(0, 95, 5, 0, 95, 0), await _db.QuantitiesAsync(lot));
-        Assert.Equal("Shipped", shipped.Response.GetProperty("status").GetString());
-        Assert.Equal("Shipped", await _db.StatusAsync(lot));
+        // 불합격 5가 처리 전이라 출하 완료가 아니라 검사 완료로 남는다(집 PC 피드백 A2)
+        Assert.Equal("Inspected", shipped.Response.GetProperty("status").GetString());
+        Assert.Equal("Inspected", await _db.StatusAsync(lot));
         await _db.AssertLedgerMatchesAsync(lot);
     }
 

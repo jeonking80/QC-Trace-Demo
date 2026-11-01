@@ -72,6 +72,15 @@ public static class DashboardEndpoints
             SELECT LotNo AS Value FROM dbo.vw_LotReconciliation WHERE State = N'Mismatch'
             """).ToListAsync();
 
+        // 불합격 처리 현황(집 PC 피드백 B6): 처리 대기 불합격 수량(모든 LOT), 오늘 폐기·재검사로 돌린 수량
+        var todayFromUtc = Kst.StartOfDayUtc(today);
+        var pendingFailed = await db.LotQuantities.AsNoTracking().Where(q => q.Failed > 0)
+            .GroupBy(_ => 1).Select(g => new { Qty = g.Sum(q => q.Failed), Lots = g.Count() }).FirstOrDefaultAsync();
+        var disposedToday = await db.Ledger.AsNoTracking()
+            .Where(l => l.CreatedAt >= todayFromUtc && l.Delta > 0
+                        && ((l.Kind == LedgerKind.Scrap && l.DeltaField == "Scrapped") || (l.Kind == LedgerKind.Reinspect && l.DeltaField == "Uninspected")))
+            .GroupBy(l => l.Kind).Select(g => new { Kind = g.Key, Qty = g.Sum(l => l.Delta) }).ToListAsync();
+
         var actions = BuildActions(open.Select(l => (l.Id, l.LotNo, l.Status, l.ItemCode, l.q, l.InspectionRequestedAt)).ToList(),
             delayed, mismatches, user, now);
 
@@ -88,6 +97,13 @@ public static class DashboardEndpoints
                 daily,
             },
             shippedToday = new { qty = t?.ShippedQty ?? 0, count = t?.ShipmentCount ?? 0 },
+            failedHandling = new
+            {
+                pendingQty = pendingFailed?.Qty ?? 0,
+                pendingLots = pendingFailed?.Lots ?? 0,
+                scrappedToday = disposedToday.FirstOrDefault(x => x.Kind == LedgerKind.Scrap)?.Qty ?? 0,
+                reinspectedToday = disposedToday.FirstOrDefault(x => x.Kind == LedgerKind.Reinspect)?.Qty ?? 0,
+            },
             reconciliation = new { mismatches = mismatches.Count },
             actions = actions.Take(MaxActions),
             actionTotal = actions.Count,
@@ -98,13 +114,14 @@ public static class DashboardEndpoints
 
     /// <summary>
     /// 조치 목록. 위험도 순(대사 불일치 → 검사 지연 → 보류·불합격 처리 → 승인·출하 대기 → 의뢰 대기).
-    /// 클릭하면 그 일을 처리하는 화면으로 간다. 보는 사람에게 그 화면 역할이 없으면 해당 LOT의 이력 원장으로 간다.
+    /// 클릭하면 그 일을 처리하는 화면으로 간다. 보는 사람에게 그 화면 역할이 없으면 해당 LOT 상세로 간다.
     /// </summary>
     private static List<ActionItem> BuildActions(
         List<(int Id, string LotNo, string Status, string ItemCode, LotQuantity Q, DateTime? RequestedAt)> lots,
         List<QcQueries.DelayedLot> delayed, List<string> mismatches, ClaimsPrincipal user, DateTime now)
     {
-        string Ledger(string lotNo) => "/Admin/Ledger?LotNo=" + Uri.EscapeDataString(lotNo);
+        // 보는 사람에게 처리 역할이 없으면 LOT 상세로 간다(집 PC 피드백 B1)
+        string Ledger(string lotNo) => "/Trace/Lot/" + Uri.EscapeDataString(lotNo);
         string Work(string role, string path, string lotNo) => user.IsInRole(role) ? path : Ledger(lotNo);
 
         var list = new List<ActionItem>();

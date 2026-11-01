@@ -6,6 +6,7 @@
 }
 
 <h1 class="h3">출하 실적</h1>
+<partial name="_FlowGuide" model="@("ship")" />
 <p class="text-muted small">승인된 잔량(예약) 안에서만 출하할 수 있습니다(R7).</p>
 <partial name="_StatusMessage" model="Model.StatusMessage" />
 
@@ -15,7 +16,7 @@
     @foreach (var lot in Model.Lots)
     {
         <tr>
-            <td>@lot.LotNo</td>
+            <td><partial name="_LotLink" model="lot.LotNo" /></td>
             <td>@lot.Item.ItemCode <span class="text-muted small">@lot.Item.Name</span></td>
             <td><strong>@lot.Quantity!.Reserved</strong></td>
             <td>
@@ -37,6 +38,6 @@
 {
     <h2 class="h6 mt-4">최근 출하</h2>
     <ul class="small">
-        @foreach (var s in Model.Recent) { <li>@Kst.Format(s.CreatedAt) · @s.LotNo · @(s.Qty)개 · @s.Destination</li> }
+        @foreach (var s in Model.Recent) { <li>@Kst.Format(s.CreatedAt) · <partial name="_LotLink" model="s.LotNo" /> · @(s.Qty)개 · @s.Destination</li> }
     </ul>
 }

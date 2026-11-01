@@ -41,7 +41,7 @@ public static class DbSeeder
         var db = adminDb;
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = services.GetRequiredService<UserManager<AppUser>>();
-        var password = configuration["Seed:DemoPassword"] ?? "QcTrace!2026";
+        var password = configuration["Seed:DemoPassword"] ?? "12341234!";
 
         foreach (var role in Roles.All)
         {

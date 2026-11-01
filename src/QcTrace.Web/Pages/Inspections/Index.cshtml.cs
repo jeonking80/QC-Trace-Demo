@@ -11,6 +11,9 @@ public class IndexModel(QcTraceDbContext db) : QcPageModel
 
     public List<Lot> ToInspect { get; private set; } = [];
     public List<Lot> ToDispose { get; private set; } = [];
+    /// <summary>최근 처리 내역: 검사·정정·재검사·폐기(집 PC 피드백 B3). mine=1이면 내가 한 것만</summary>
+    [Microsoft.AspNetCore.Mvc.BindProperty(SupportsGet = true)] public bool Mine { get; set; }
+    public List<QcTrace.Web.Services.LedgerText.Event> Recent { get; private set; } = [];
 
     public async Task OnGetAsync()
     {
@@ -23,6 +26,21 @@ public class IndexModel(QcTraceDbContext db) : QcPageModel
             .Where(l => l.Quantity!.Failed > 0)
             .OrderBy(l => l.CreatedAt)
             .ToListAsync();
+
+        string[] kinds = [LedgerKind.Inspect, LedgerKind.Correct, LedgerKind.Reinspect, LedgerKind.Scrap];
+        var me = CurrentUserId;
+        var lines = await (
+            from l in db.Ledger.AsNoTracking()
+            join lot in db.Lots on l.LotId equals lot.Id
+            join u in db.Users on l.ActorId equals u.Id
+            where kinds.Contains(l.Kind) && (!Mine || l.ActorId == me)
+            orderby l.CreatedAt descending, l.Id descending
+            select new QcTrace.Web.Services.LedgerText.Line(l.Id, l.CreatedAt, lot.LotNo, l.Kind, l.DeltaField, l.Delta,
+                u.DisplayName, l.Reason, l.SourceTable, l.SourceId))
+            .Take(120).ToListAsync();
+        Recent = QcTrace.Web.Services.LedgerText.Group(lines);
+        Recent.Reverse();
+        if (Recent.Count > 30) Recent = Recent.Take(30).ToList();
     }
 
     public static bool IsDelayed(Lot lot) =>

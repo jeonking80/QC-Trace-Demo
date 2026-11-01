@@ -33,7 +33,7 @@ docker compose up -d
 
 ### 데모 계정
 
-비밀번호는 모두 `QcTrace!2026` 입니다(데모 전용, 설정 `Seed:DemoPassword`로 바꿀 수 있음).
+비밀번호는 모두 `12341234!` 입니다(데모 전용, 설정 `Seed:DemoPassword`로 바꿀 수 있음). 이미 만들어진 DB의 계정 비밀번호는 바뀌지 않으므로, 예전 비밀번호로 시드된 DB는 `docker compose down -v` 후 다시 띄우면 새 비밀번호로 시드됩니다.
 
 | 역할 | 아이디 | 첫 화면 |
 | --- | --- | --- |
@@ -64,6 +64,7 @@ E2E 시나리오 1·3과 같은 흐름입니다. 시드의 검사·출하 기록
 | ![본인 승인 차단](docs/screenshots/06-approval-self-blocked.png) 06 본인 검사 LOT 승인 차단 | ![승인 초과 출하 거절](docs/screenshots/07-shipment-over-approved.png) 07 승인 초과 출하 거절 |
 | ![이력 원장](docs/screenshots/08-ledger.png) 08 이력 원장 | ![재고 대사](docs/screenshots/09-reconcile.png) 09 재고 대사 |
 | ![보고서·알림](docs/screenshots/10-reports.png) 10 보고서·알림 | ![대시보드](docs/screenshots/02-dashboard.png) 02 운영 대시보드 |
+| ![LOT 조회](docs/screenshots/11-lot-search.png) 11 LOT 조회 | ![LOT 상세](docs/screenshots/12-lot-detail.png) 12 LOT 상세(생산 담당 화면: 불합격 사유·측정값·다음 할 일) |
 
 ## 기술 구성
 
@@ -77,7 +78,7 @@ E2E 시나리오 1·3과 같은 흐름입니다. 시드의 검사·출하 기록
 | 대시보드 | 프레임워크 없는 HTML · JavaScript (fetch API, 60초 갱신) |
 | 보고서 | ClosedXML, Hosted Service (매일 08:00 한국 시간) |
 | 테스트 | xUnit, Testcontainers (실제 SQL Server), Playwright |
-| CI | GitHub Actions (`.github/workflows/ci.yml`) |
+| 검증 실행 | 로컬 Docker (GitHub Actions는 쓰지 않음) |
 
 ## 검증
 
@@ -86,8 +87,8 @@ E2E 시나리오 1·3과 같은 흐름입니다. 시드의 검사·출하 기록
 | 층 | 도구 | 결과 |
 | --- | --- | --- |
 | 규칙 (R1~R10, 구현 코드를 보지 않고 작성) | xUnit + Testcontainers | 81/81 통과 |
-| 통합 (SP · 트리거 · 권한 · API · 자동화 · R11) | xUnit + Testcontainers | 112/112 통과 |
-| E2E | Playwright 시나리오 3개 (정상, 불합격 재검사, 본인 승인 차단) + 화면 확인 1개 | 4/4 통과 |
+| 통합 (SP · 트리거 · 권한 · API · 화면 · 자동화 · R11) | xUnit + Testcontainers | 139/139 통과 |
+| E2E | Playwright 시나리오 3개 (정상, 불합격 재검사, 본인 승인 차단) + 화면 확인 2개 | 5/5 통과 |
 | 독립 대조 | 별도 콘솔 앱, 원장 합으로 수량 재계산 + 원장 행마다 근거 원본 행 확인 | LOT 33건 불일치 0건 |
 
 - 업무 규칙 R1~R11과 테스트 대응표: [docs/rules-traceability.md](docs/rules-traceability.md)

@@ -23,6 +23,7 @@ public static class Policies
         ("/Approvals", Approver),
         ("/Shipments", Shipper),
         ("/Admin", Admin),
+        ("/Trace", AnyRole),   // LOT 조회·상세: 역할이 있는 사용자 누구나(집 PC 피드백 B1)
     ];
 
     public static void Configure(Microsoft.AspNetCore.Authorization.AuthorizationOptions options)

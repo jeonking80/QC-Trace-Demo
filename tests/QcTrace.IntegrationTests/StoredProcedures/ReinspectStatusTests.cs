@@ -2,7 +2,7 @@ using QcTrace.IntegrationTests.Infrastructure;
 
 namespace QcTrace.IntegrationTests.StoredProcedures;
 
-/// <summary>재검사로 미검사가 다시 생기면 LOT은 부분 검사(Inspecting)로 돌아가 검사 목록에 다시 나온다 (단위 10 E2E에서 발견한 문제)</summary>
+/// <summary>LOT 상태 규칙. 재검사로 미검사가 다시 생기면 LOT은 부분 검사(Inspecting)로 돌아가 검사 목록에 다시 나온다 (단위 10 E2E에서 발견한 문제)</summary>
 [Collection(SqlServerCollection.Name)]
 public class ReinspectStatusTests(SqlServerFixture fixture)
 {
@@ -32,9 +32,23 @@ public class ReinspectStatusTests(SqlServerFixture fixture)
         await _db.ApplyInspection(Db.Key(), lot, "inspector1", 3, "Fail", reason: "불량");
         await _db.ApproveShipment(Db.Key(), lot, "approver", 7);
         await _db.ShipLot(Db.Key(), lot, "shipper", 7);
-        Assert.Equal("Shipped", await _db.StatusAsync(lot));
+        Assert.Equal("Inspected", await _db.StatusAsync(lot));   // 불합격 3이 남아 출하 완료가 아니다(A2)
 
         await _db.DisposeFailed(Db.Key(), lot, "inspector1", 3, "Reinspect", "재검사");
         Assert.Equal("Inspecting", await _db.StatusAsync(lot));
+    }
+
+    [Fact(DisplayName = "합격 전량을 출하해도 불합격이 남아 있으면 출하 완료가 아니고, 폐기까지 끝나면 출하 완료가 된다")]
+    public async Task FailedRemaining_NotShipped_UntilDisposed()
+    {
+        var lot = await fixture.CreateLotAsync(10);
+        await _db.ApplyInspection(Db.Key(), lot, "inspector1", 8, "Pass");
+        await _db.ApplyInspection(Db.Key(), lot, "inspector1", 2, "Fail", reason: "불량");
+        await _db.ApproveShipment(Db.Key(), lot, "approver", 8);
+        await _db.ShipLot(Db.Key(), lot, "shipper", 8);
+        Assert.Equal("Inspected", await _db.StatusAsync(lot));
+
+        await _db.DisposeFailed(Db.Key(), lot, "inspector2", 2, "Scrap", "폐기");
+        Assert.Equal("Shipped", await _db.StatusAsync(lot));
     }
 }

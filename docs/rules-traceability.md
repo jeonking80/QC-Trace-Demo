@@ -6,8 +6,8 @@
 | 층 | 프로젝트 | 건수 | 결과 |
 | --- | --- | --- | --- |
 | 규칙 테스트 (구현 코드를 보지 않고 별도 세션에서 작성) | `tests/QcTrace.RuleTests` | 81 | 81 통과 |
-| 통합 테스트 (SP·트리거·권한·API·화면·자동화) | `tests/QcTrace.IntegrationTests` | 112 | 112 통과 |
-| E2E (브라우저) | `tests/e2e` (Playwright) | 시나리오 3 + 화면 1 | 4 통과 |
+| 통합 테스트 (SP·트리거·권한·API·화면·자동화) | `tests/QcTrace.IntegrationTests` | 139 | 139 통과 |
+| E2E (브라우저) | `tests/e2e` (Playwright) | 시나리오 3 + 화면 2 | 5 통과 |
 | 독립 대조 | `tools/Reconcile` | LOT 33건 | 불일치 0건 |
 
 ## 규칙별 대응
@@ -32,7 +32,9 @@
 | --- | --- |
 | 재고 대사 뷰(`vw_LotReconciliation`) | `Admin/ReconciliationTests` 4건: 정상, R9 초과 보류 구분, 수량 조작 불일치, 등식 차이 ≠ 초과분 |
 | 독립 대조 앱 | `Admin/IndependentReconcileTests` 8건: 전 과정 일치, R9 초과는 불일치 아님, SP 밖 조작 6종 검출(근거 행 없는 원장, 검사 행과 안 맞는 원장 포함) |
-| 재검사 후 상태 | `StoredProcedures/ReinspectStatusTests` 2건 (E2E 시나리오 2에서 발견한 결함의 회귀 테스트) |
+| 재검사 후 상태 | `StoredProcedures/ReinspectStatusTests` 3건 (E2E 시나리오 2에서 발견한 결함, 집 PC 피드백 A2 "불합격이 남았는데 출하 완료"의 회귀 테스트) |
+| LOT 조회·상세, 원장 표시 | `Screens/LotDetailTests` 9건(역할별 접근·404, 생산 담당이 사유·측정값·다음 할 일을 봄, 검사자 최근 처리 내역, 대시보드 불합격 처리 = DB), `Screens/LedgerTextTests` 12건(원장 행을 한 줄 문장으로) |
+| 비밀번호 규칙 | `Api/PasswordPolicyTests` 5건 (데모 비밀번호 `12341234!` 허용, 숫자·특수문자·6자 미만 거절) |
 | 역할·권한 | 역할 없는 사용자 403, 역할 변경 이력·사유 필수·자기 관리자 해제 금지 |
 | 기준정보 CSV | 전부 반영 또는 전부 거절, 줄 번호 안내, 수식 무력화 |
 | 대시보드 API | 관리자 전용, KPI = 원본 테이블 독립 집계, 지연·불일치 조치 순서 |
@@ -41,7 +43,7 @@
 ## 실행
 
 ```bash
-dotnet test                                   # 규칙 81 + 통합 112 (Docker 필요, Testcontainers)
+dotnet test                                   # 규칙 81 + 통합 139 (Docker 필요, Testcontainers)
 docker compose up -d                          # 앱 기동
 cd tests/e2e && npm ci && npx playwright test # E2E (앱이 떠 있어야 함)
 dotnet run --project tools/Reconcile          # 독립 대조 (불일치 있으면 종료 코드 1)

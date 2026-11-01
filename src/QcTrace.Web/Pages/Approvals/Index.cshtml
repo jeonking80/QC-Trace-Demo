@@ -5,6 +5,7 @@
 }
 
 <h1 class="h3">출하 승인</h1>
+<partial name="_FlowGuide" model="@("approve")" />
 <p class="text-muted small">출하 가능 = 합격 − 출하 완료 − 출하 예약. 검사 전 수량은 승인할 수 없습니다(R1).</p>
 <partial name="_StatusMessage" model="Model.StatusMessage" />
 
@@ -15,7 +16,7 @@
     {
         var lot = row.Lot;
         <tr>
-            <td>@lot.LotNo <partial name="_LotStatus" model="lot.Status" /></td>
+            <td><partial name="_LotLink" model="lot.LotNo" /> <partial name="_LotStatus" model="lot.Status" /></td>
             <td>@lot.Item.ItemCode <span class="text-muted small">@lot.Item.Name</span></td>
             <td class="small"><partial name="_QtyBadges" model="lot.Quantity" /></td>
             <td><strong>@row.Available</strong></td>

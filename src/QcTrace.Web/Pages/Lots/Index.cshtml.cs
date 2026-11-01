@@ -16,6 +16,8 @@ public class IndexModel(QcTraceDbContext db, QcCommands qc) : QcPageModel
     public string? Status { get; set; }
 
     public List<Lot> Lots { get; private set; } = [];
+    /// <summary>LOT별 가장 최근 불합격·보류 판정 사유(생산 담당도 이유를 알 수 있게, 집 PC 피드백 B2)</summary>
+    public Dictionary<int, (string Verdict, string? Reason, string Inspector)> LatestIssue { get; private set; } = new();
     public List<SelectListItem> ItemOptions { get; private set; } = [];
 
     [BindProperty]
@@ -76,6 +78,14 @@ public class IndexModel(QcTraceDbContext db, QcCommands qc) : QcPageModel
             query = query.Where(l => l.Status == Status);
         }
         Lots = await query.OrderByDescending(l => l.CreatedAt).Take(200).ToListAsync();
+        var ids = Lots.Select(l => l.Id).ToList();
+        var issues = await (
+            from i in db.Inspections.AsNoTracking()
+            join u in db.Users on i.InspectorId equals u.Id
+            where ids.Contains(i.LotId) && i.Verdict != Verdict.Pass
+            orderby i.CreatedAt descending
+            select new { i.LotId, i.Verdict, i.Reason, u.DisplayName }).ToListAsync();
+        LatestIssue = issues.GroupBy(x => x.LotId).ToDictionary(g => g.Key, g => (g.First().Verdict, (string?)g.First().Reason, g.First().DisplayName));
         ItemOptions = await db.Items.AsNoTracking().Where(i => i.IsActive).OrderBy(i => i.ItemCode)
             .Select(i => new SelectListItem($"{i.ItemCode} {i.Name}", i.Id.ToString()))
             .ToListAsync();

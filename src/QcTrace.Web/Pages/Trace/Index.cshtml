@@ -1,0 +1,42 @@
+@page
+@model QcTrace.Web.Pages.Trace.IndexModel
+@{
+    ViewData["Title"] = "LOT 조회";
+    var filters = new (string? Value, string Label)[] { (null, "전체"), ("Registered", "등록"), ("Waiting", "검사 대기"), ("Inspecting", "부분 검사"), ("Inspected", "검사 완료"), ("Shipped", "출하 완료") };
+}
+
+<h1 class="h3">LOT 조회</h1>
+<p class="text-muted small">LOT 번호를 누르면 검사 사유·측정값, 불합격 처리, 승인·출하, 다음 할 일을 볼 수 있습니다. 조회만 되고 바꿀 수는 없습니다.</p>
+
+<form method="get" class="row g-2 align-items-end mb-2">
+    <div class="col-md-4">
+        <label class="form-label" for="Q">LOT 번호 또는 품목 코드</label>
+        <input class="form-control form-control-sm" id="Q" name="Q" value="@Model.Q" placeholder="일부만 입력해도 됨" />
+    </div>
+    <input type="hidden" name="Status" value="@Model.Status" />
+    <div class="col-auto"><button class="btn btn-sm btn-primary">찾기</button></div>
+</form>
+<div class="mb-2">
+    @foreach (var (value, label) in filters)
+    {
+        <a class="btn btn-sm @(Model.Status == value ? "btn-dark" : "btn-outline-secondary")" asp-page="./Index" asp-route-status="@value" asp-route-q="@Model.Q">@label</a>
+    }
+</div>
+
+<table class="table table-sm" id="trace-lots">
+    <thead><tr><th>LOT</th><th>품목</th><th>생산</th><th>상태</th><th>수량</th></tr></thead>
+    <tbody>
+    @foreach (var lot in Model.Lots)
+    {
+        <tr>
+            <td><partial name="_LotLink" model="lot.LotNo" /><div class="text-muted small">@lot.ProducedOn.ToString("yyyy-MM-dd") · @lot.Shift</div></td>
+            <td>@lot.Item.ItemCode <span class="text-muted small">@lot.Item.Name</span></td>
+            <td>@lot.ProducedQty</td>
+            <td><partial name="_LotStatus" model="lot.Status" /></td>
+            <td class="small"><partial name="_QtyBadges" model="lot.Quantity" /></td>
+        </tr>
+    }
+    @if (Model.Lots.Count == 0) { <tr><td colspan="5" class="text-muted">찾는 LOT이 없습니다.</td></tr> }
+    </tbody>
+</table>
+@if (Model.Lots.Count == QcTrace.Web.Pages.Trace.IndexModel.Limit) { <p class="small text-muted">최근 @(QcTrace.Web.Pages.Trace.IndexModel.Limit)건만 보입니다. 번호로 찾아 보세요.</p> }

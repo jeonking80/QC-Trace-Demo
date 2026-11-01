@@ -64,7 +64,7 @@ else
         @foreach (var r in Model.Rows)
         {
             <tr class="@(r.State == ReconcileModel.Mismatch ? "table-danger" : r.State == ReconcileModel.OverageHeld ? "table-warning" : "")">
-                <td><a asp-page="./Ledger" asp-route-lotNo="@r.LotNo">@r.LotNo</a><div class="small text-muted">@r.Status</div></td>
+                <td><partial name="_LotLink" model="r.LotNo" /><div class="small text-muted">@r.Status</div></td>
                 <td>
                     <strong>@ReconcileModel.StateLabel(r.State)</strong>
                     @if (!r.LedgerMatches) { <div class="small">원장 합과 다름</div> }

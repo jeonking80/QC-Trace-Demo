@@ -47,8 +47,8 @@ public sealed class DashboardApiTests(SqlServerFixture fixture) : IDisposable
         Assert.DoesNotContain(freshNo, delayed);
         var action = d.GetProperty("actions").EnumerateArray().Single(a => a.GetProperty("kind").GetString() == "delayed" && a.GetProperty("lotNo").GetString() == lotNo);
         Assert.Equal("danger", action.GetProperty("severity").GetString());
-        // 관리자에게 검사자 역할이 없으므로 그 LOT 이력 원장으로 간다
-        Assert.StartsWith("/Admin/Ledger?LotNo=", action.GetProperty("href").GetString());
+        // 관리자에게 검사자 역할이 없으므로 그 LOT 상세로 간다
+        Assert.StartsWith("/Trace/Lot/", action.GetProperty("href").GetString());   // 처리 역할이 없으면 LOT 상세
 
         var expectedDelayed = (int)(await _db.ScalarAsync("""
             SELECT COUNT(*) FROM Lots l JOIN LotQuantities q ON q.LotId = l.Id

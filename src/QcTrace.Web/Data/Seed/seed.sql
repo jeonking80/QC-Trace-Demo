@@ -265,6 +265,20 @@ FROM dbo.Lots lt
 LEFT JOIN dbo.Ledger g ON g.LotId = lt.Id
 GROUP BY lt.Id;
 
+/* 7. 검사 의뢰 원장 (R10). 화면의 검사 의뢰(usp_RequestInspection)와 같은 모양: 수량 변화 없음(Delta 0) */
+INSERT INTO dbo.Ledger (LotId, Kind, DeltaField, Delta, ActorId, Reason, SourceTable, SourceId, CreatedAt)
+SELECT lt.Id, N'Request', N'Uninspected', 0, lt.CreatedById, N'검사 의뢰', N'Lots', lt.Id, lt.InspectionRequestedAt
+FROM dbo.Lots lt
+WHERE lt.InspectionRequestedAt IS NOT NULL;
+
+/* 8. LOT 상태를 수량에서 다시 정한다(앱의 상태 규칙 usp_RefreshLotStatus와 같게) */
+DECLARE @refreshId int = (SELECT MIN(Id) FROM dbo.Lots);
+WHILE @refreshId IS NOT NULL
+BEGIN
+    EXEC dbo.usp_RefreshLotStatus @refreshId;
+    SET @refreshId = (SELECT MIN(Id) FROM dbo.Lots WHERE Id > @refreshId);
+END;
+
 COMMIT TRANSACTION;
 
 DROP TABLE #Event;

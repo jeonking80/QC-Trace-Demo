@@ -1,7 +1,7 @@
 const path = require('path');
 const { expect } = require('@playwright/test');
 
-const PASSWORD = process.env.DEMO_PASSWORD || 'QcTrace!2026';
+const PASSWORD = process.env.DEMO_PASSWORD || '12341234!';
 const SHOTS = path.resolve(__dirname, '../../../docs/screenshots');
 
 /** 새 브라우저 컨텍스트로 로그인한 페이지. 역할마다 따로 띄워 쿠키가 섞이지 않게 한다. */

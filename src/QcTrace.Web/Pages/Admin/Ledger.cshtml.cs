@@ -22,6 +22,12 @@ public class LedgerModel(QcTraceDbContext db) : QcPageModel
     [BindProperty(SupportsGet = true)] public string? Kind { get; set; }
     [BindProperty(SupportsGet = true)] public DateOnly? From { get; set; }
     [BindProperty(SupportsGet = true)] public DateOnly? To { get; set; }
+    /// <summary>raw: 원장 행 그대로(−/+ 행 각각). 기본은 동작 한 건을 한 줄로(집 PC 피드백 B5)</summary>
+    [BindProperty(SupportsGet = true)] public string? Show { get; set; }
+    public bool IsRaw => Show == "raw";
+    public List<LedgerText.Event> Events { get; private set; } = [];
+    /// <summary>LOT을 골라 보면 일이 일어난 순서(오래된 것부터), 아니면 최근 것부터</summary>
+    public bool OldestFirst => !string.IsNullOrWhiteSpace(LotNo);
 
     public sealed record Row(long Id, DateTime CreatedAt, string LotNo, string Kind, string DeltaField, int Delta,
         string Actor, string Reason, string? SourceTable, long? SourceId);
@@ -32,13 +38,9 @@ public class LedgerModel(QcTraceDbContext db) : QcPageModel
     public int TotalCount { get; private set; }
     public List<SelectListItem> ActorOptions { get; private set; } = [];
 
-    public static readonly (string Value, string Label)[] Kinds =
-    [
-        (LedgerKind.Produce, "생산"), (LedgerKind.Request, "검사 의뢰"), (LedgerKind.Inspect, "검사"), (LedgerKind.Correct, "정정"),
-        (LedgerKind.Reinspect, "재검사"), (LedgerKind.Scrap, "폐기"), (LedgerKind.Approve, "출하 승인"), (LedgerKind.Ship, "출하"),
-    ];
+    public static readonly (string Value, string Label)[] Kinds = LedgerText.Kinds;
 
-    public static string KindLabel(string kind) => Kinds.FirstOrDefault(k => k.Value == kind).Label ?? kind;
+    public static string KindLabel(string kind) => LedgerText.KindLabel(kind);
 
     public bool IsRoleView => View == "roles";
 
@@ -62,6 +64,10 @@ public class LedgerModel(QcTraceDbContext db) : QcPageModel
             var query = Query();
             TotalCount = await query.CountAsync();
             Rows = await query.Take(ScreenLimit).ToListAsync();
+            Events = LedgerText.Group(Rows.Select(r => new LedgerText.Line(r.Id, r.CreatedAt, r.LotNo, r.Kind, r.DeltaField, r.Delta,
+                r.Actor, r.Reason, r.SourceTable, r.SourceId)));
+            if (!OldestFirst) Events.Reverse();
+            if (IsRaw && OldestFirst) Rows.Reverse();
         }
         return Page();
     }

@@ -33,3 +33,7 @@ a.kpi:hover { background: #f8f9fa; }
 .action-item.sev-warning { border-left-color: var(--bs-warning); }
 .action-item.sev-info { border-left-color: var(--bs-info); }
 #dash-action-list { max-height: 70vh; overflow-y: auto; }
+
+/* 지표 설명 표시(마우스를 올리면 title 설명) */
+.help-mark { cursor: help; color: #6c757d; }
+.flow-steps li.badge { font-size: .8rem; }

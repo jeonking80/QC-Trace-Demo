@@ -58,6 +58,9 @@
         kpi('fail-7d').textContent = `오늘 ${num.format(d.failRate.today.failed)}/${num.format(d.failRate.today.inspected)}개 · 7일 ${pct(d.failRate.last7Days.failRate)}`;
         kpi('shipped').textContent = num.format(d.shippedToday.qty) + '개';
         kpi('shipped-count').textContent = '출하 ' + num.format(d.shippedToday.count) + '건';
+        kpi('failed-pending').textContent = '대기 ' + num.format(d.failedHandling.pendingQty) + '개';
+        kpi('failed-pending').classList.toggle('text-warning', d.failedHandling.pendingQty > 0);
+        kpi('failed-today').textContent = `${num.format(d.failedHandling.pendingLots)}개 LOT · 오늘 폐기 ${num.format(d.failedHandling.scrappedToday)} · 재검사 ${num.format(d.failedHandling.reinspectedToday)}`;
         kpi('action-total').textContent = num.format(d.actionTotal);
 
         renderActions(d);
@@ -66,7 +69,7 @@
         delayedRows.replaceChildren(...(d.delayed.lots.length === 0
             ? [el('tr', {}, el('td', { colspan: '4', class: 'text-success' }, '지연된 LOT이 없습니다.'))]
             : d.delayed.lots.map(l => el('tr', { class: 'delayed' },
-                el('td', {}, el('a', { href: '/Admin/Ledger?LotNo=' + encodeURIComponent(l.lotNo) }, l.lotNo)),
+                el('td', {}, el('a', { href: '/Trace/Lot/' + encodeURIComponent(l.lotNo) }, l.lotNo)),
                 el('td', {}, l.itemCode),
                 el('td', { class: 'text-end' }, l.hours + '시간'),
                 el('td', { class: 'text-end' }, num.format(l.uninspected))))));
@@ -93,7 +96,7 @@
         }
         $('#dash-action-note').textContent = d.actionTotal > d.actions.length
             ? `위험도 순 상위 ${d.actions.length}건만 보입니다(전체 ${d.actionTotal}건).`
-            : '항목을 누르면 처리 화면으로 갑니다. 그 화면 권한이 없으면 해당 LOT 이력 원장으로 갑니다.';
+            : '항목을 누르면 처리 화면으로 갑니다. 그 화면 권한이 없으면 해당 LOT 상세로 갑니다.';
     }
 
     $('#dash-filters').addEventListener('click', (e) => {

@@ -6,6 +6,7 @@
 }
 
 <h1 class="h3">검사</h1>
+<partial name="_FlowGuide" model="@("inspect")" />
 <partial name="_StatusMessage" model="Model.StatusMessage" />
 
 <h2 class="h5 mt-3">검사할 LOT <span class="text-muted small">(의뢰가 오래된 순, 48시간 초과는 노란색)</span></h2>
@@ -15,7 +16,7 @@
     @foreach (var lot in Model.ToInspect)
     {
         <tr class="@(QcTrace.Web.Pages.Inspections.IndexModel.IsDelayed(lot) ? "delayed" : "")">
-            <td>@lot.LotNo</td>
+            <td><partial name="_LotLink" model="lot.LotNo" /></td>
             <td>@lot.Item.ItemCode <span class="text-muted small">@lot.Item.Name</span></td>
             <td><partial name="_LotStatus" model="lot.Status" /></td>
             <td><strong>@lot.Quantity!.Uninspected</strong> / @lot.ProducedQty</td>
@@ -34,12 +35,35 @@
     @foreach (var lot in Model.ToDispose)
     {
         <tr>
-            <td>@lot.LotNo</td>
+            <td><partial name="_LotLink" model="lot.LotNo" /></td>
             <td>@lot.Item.ItemCode <span class="text-muted small">@lot.Item.Name</span></td>
             <td class="text-danger"><strong>@lot.Quantity!.Failed</strong></td>
             <td><a class="btn btn-sm btn-outline-danger" asp-page="./Dispose" asp-route-lotId="@lot.Id">불합격 처리</a></td>
         </tr>
     }
     @if (Model.ToDispose.Count == 0) { <tr><td colspan="4" class="text-muted">처리할 불합격이 없습니다.</td></tr> }
+    </tbody>
+</table>
+
+<h2 class="h5 mt-4">최근 처리 내역 <span class="text-muted small">(검사·정정·재검사·폐기, 최근 30건)</span></h2>
+<div class="mb-2">
+    <a class="btn btn-sm @(Model.Mine ? "btn-outline-secondary" : "btn-dark")" asp-page="./Index">전체</a>
+    <a class="btn btn-sm @(Model.Mine ? "btn-dark" : "btn-outline-secondary")" asp-page="./Index" asp-route-mine="true">내가 한 것</a>
+</div>
+<table class="table table-sm" id="recent-work">
+    <thead><tr><th>시각</th><th>LOT</th><th>작업</th><th>수량 이동</th><th>작업자</th><th>사유</th></tr></thead>
+    <tbody>
+    @foreach (var e in Model.Recent)
+    {
+        <tr>
+            <td class="text-nowrap">@QcTrace.Web.Services.Kst.Format(e.CreatedAt)</td>
+            <td><partial name="_LotLink" model="e.LotNo" /></td>
+            <td class="text-nowrap">@e.KindLabel</td>
+            <td>@e.Text</td>
+            <td>@e.Actor</td>
+            <td>@e.Reason</td>
+        </tr>
+    }
+    @if (Model.Recent.Count == 0) { <tr><td colspan="6" class="text-muted">처리 내역이 없습니다.</td></tr> }
     </tbody>
 </table>

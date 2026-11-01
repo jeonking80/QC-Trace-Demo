@@ -7,6 +7,7 @@
 }
 
 <h1 class="h3">LOT 목록·등록</h1>
+<partial name="_FlowGuide" model="@("produce")" />
 <partial name="_StatusMessage" model="Model.StatusMessage" />
 
 <div class="card mb-4">
@@ -56,11 +57,17 @@
     @foreach (var lot in Model.Lots)
     {
         <tr>
-            <td>@lot.LotNo<div class="text-muted small">@lot.ProducedOn.ToString("yyyy-MM-dd") · @lot.Shift</div></td>
+            <td><partial name="_LotLink" model="lot.LotNo" /><div class="text-muted small">@lot.ProducedOn.ToString("yyyy-MM-dd") · @lot.Shift</div></td>
             <td>@lot.Item.ItemCode<div class="text-muted small">@lot.Item.Name</div></td>
             <td>@lot.ProducedQty</td>
             <td><partial name="_LotStatus" model="lot.Status" /></td>
-            <td class="small"><partial name="_QtyBadges" model="lot.Quantity" /></td>
+            <td class="small">
+                <partial name="_QtyBadges" model="lot.Quantity" />
+                @if (Model.LatestIssue.TryGetValue(lot.Id, out var issue))
+                {
+                    <div class="text-muted">최근 @(issue.Verdict == "Fail" ? "불합격" : "보류") 사유: @issue.Reason (@issue.Inspector)</div>
+                }
+            </td>
             <td>
                 @if (lot.Status == "Registered")
                 {

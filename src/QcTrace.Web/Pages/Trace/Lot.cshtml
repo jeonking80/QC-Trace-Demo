@@ -1,0 +1,107 @@
+@page "{lotNo}"
+@model QcTrace.Web.Pages.Trace.LotModel
+@using QcTrace.Web.Services
+@{
+    ViewData["Title"] = Model.Lot.LotNo;
+    var lot = Model.Lot;
+    var q = lot.Quantity;
+}
+
+<div class="d-flex align-items-center gap-2 mb-1">
+    <h1 class="h3 mb-0" id="lot-no">@lot.LotNo</h1>
+    <partial name="_LotStatus" model="lot.Status" />
+</div>
+<p class="text-muted small mb-2">
+    @lot.Item.ItemCode @lot.Item.Name · 생산 @(lot.ProducedQty)개 · 생산일 @lot.ProducedOn.ToString("yyyy-MM-dd") @lot.Shift
+    @if (lot.InspectionRequestedAt is not null) { <text>· 검사 의뢰 @Kst.Format(lot.InspectionRequestedAt)</text> }
+</p>
+<p class="small mb-3"><partial name="_QtyBadges" model="q" /></p>
+
+<div class="card mb-3" id="next-steps">
+    <div class="card-body py-2">
+        <div class="fw-bold mb-1">다음 할 일</div>
+        @if (Model.NextSteps.Count == 0)
+        {
+            <div class="text-muted small">남은 작업이 없습니다.</div>
+        }
+        <ul class="mb-0 small">
+        @foreach (var s in Model.NextSteps)
+        {
+            <li>
+                <span class="badge bg-secondary">@s.RoleLabel</span> @s.Text
+                @if (User.IsInRole(s.Role)) { <a href="@s.Path">처리하러 가기</a> }
+            </li>
+        }
+        </ul>
+    </div>
+</div>
+
+<h2 class="h5">검사 기록</h2>
+<table class="table table-sm" id="lot-inspections">
+    <thead><tr><th>시각</th><th>검사자</th><th class="text-end">수량</th><th>판정</th><th>사유</th><th>측정값 (규격)</th></tr></thead>
+    <tbody>
+    @foreach (var i in Model.Inspections)
+    {
+        <tr>
+            <td class="text-nowrap">@Kst.Format(i.CreatedAt)</td>
+            <td>@i.Inspector</td>
+            <td class="text-end">@i.Qty</td>
+            <td class="@QcTrace.Web.Pages.Trace.LotModel.VerdictCss(i.Verdict)">
+                @QcTrace.Web.Pages.Trace.LotModel.VerdictLabel(i.Verdict)
+                @if (i.CorrectsInspectionId is not null) { <div class="small text-muted">정정 (검사 기록 #@i.CorrectsInspectionId)</div> }
+            </td>
+            <td>@i.Reason</td>
+            <td class="small">
+                @foreach (var m in i.Measurements)
+                {
+                    <div class="@(m.InSpec == false ? "text-danger" : "")">@m.Name @m.Value <span class="text-muted">(@m.Spec)</span>@(m.InSpec == false ? " 규격 밖" : "")</div>
+                }
+            </td>
+        </tr>
+    }
+    @if (Model.Inspections.Count == 0) { <tr><td colspan="6" class="text-muted">아직 검사 기록이 없습니다.</td></tr> }
+    </tbody>
+</table>
+
+<h2 class="h5">불합격 처리</h2>
+<table class="table table-sm" id="lot-dispositions">
+    <thead><tr><th>시각</th><th>처리</th><th>작업자</th><th>사유</th></tr></thead>
+    <tbody>
+    @foreach (var d in Model.Dispositions)
+    {
+        <tr><td class="text-nowrap">@Kst.Format(d.CreatedAt)</td><td>@d.Text</td><td>@d.Actor</td><td>@d.Reason</td></tr>
+    }
+    @if (Model.Dispositions.Count == 0) { <tr><td colspan="4" class="text-muted">불합격 처리 기록이 없습니다.</td></tr> }
+    </tbody>
+</table>
+
+<h2 class="h5">출하 승인·출하</h2>
+<table class="table table-sm" id="lot-shipping">
+    <thead><tr><th>시각</th><th>구분</th><th>작업자</th><th class="text-end">수량</th><th>출하처·사유</th></tr></thead>
+    <tbody>
+    @foreach (var a in Model.Approvals)
+    {
+        <tr><td class="text-nowrap">@Kst.Format(a.CreatedAt)</td><td>@(a.Decision == "Approved" ? "출하 승인" : "승인 반려")</td><td>@a.Approver</td><td class="text-end">@(a.Decision == "Approved" ? a.Qty : 0)</td><td>@a.Reason</td></tr>
+    }
+    @foreach (var s in Model.Shipments)
+    {
+        <tr><td class="text-nowrap">@Kst.Format(s.CreatedAt)</td><td>출하</td><td>@s.Shipper</td><td class="text-end">@s.Qty</td><td>@s.Destination</td></tr>
+    }
+    @if (Model.Approvals.Count + Model.Shipments.Count == 0) { <tr><td colspan="5" class="text-muted">아직 승인·출하 기록이 없습니다.</td></tr> }
+    </tbody>
+</table>
+@if (Model.Inspectors.Count > 0)
+{
+    <p class="small text-muted">이 LOT을 검사한 사람(출하 승인 불가, R5): @string.Join(", ", Model.Inspectors)</p>
+}
+
+<h2 class="h5 mt-4">전체 이력 <span class="small text-muted">(일어난 순서, 원장 기준)</span></h2>
+<table class="table table-sm" id="lot-timeline">
+    <thead><tr><th>시각</th><th>작업</th><th>수량 이동</th><th>작업자</th><th>사유</th></tr></thead>
+    <tbody>
+    @foreach (var e in Model.Timeline)
+    {
+        <tr><td class="text-nowrap">@Kst.Format(e.CreatedAt)</td><td class="text-nowrap">@e.KindLabel</td><td>@e.Text</td><td>@e.Actor</td><td>@e.Reason</td></tr>
+    }
+    </tbody>
+</table>

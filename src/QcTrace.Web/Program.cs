@@ -53,6 +53,9 @@ builder.Services.AddDbContext<QcTraceDbContext>(options =>
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
     {
         options.User.RequireUniqueEmail = false;
+        // 비밀번호: 6자 이상, 숫자·특수문자 포함. 대·소문자는 요구하지 않는다(2026-11-01 사용자 결정, 데모 비밀번호 12341234!)
+        options.Password.RequireUppercase = false;
+        options.Password.RequireLowercase = false;
         options.Lockout.MaxFailedAccessAttempts = 5;
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
     })

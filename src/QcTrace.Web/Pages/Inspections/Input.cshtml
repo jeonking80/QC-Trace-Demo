@@ -5,7 +5,7 @@
     var q = Model.Lot.Quantity!;
 }
 
-<h1 class="h3">검사 입력 <small class="text-muted">@Model.Lot.LotNo</small></h1>
+<h1 class="h3">검사 입력 <small><partial name="_LotLink" model="Model.Lot.LotNo" /></small></h1>
 <p class="mb-1">@Model.Lot.Item.ItemCode @Model.Lot.Item.Name · 생산 @Model.Lot.ProducedQty EA</p>
 <p class="small"><partial name="_QtyBadges" model="q" /></p>
 <partial name="_StatusMessage" model="Model.StatusMessage" />

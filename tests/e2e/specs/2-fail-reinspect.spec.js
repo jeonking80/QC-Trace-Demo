@@ -20,8 +20,8 @@ test('불합격분을 재검사로 되돌리면 미검사로 돌아가고 다시
   await expect(success(inspector)).toContainText('재검사 대기(미검사)로 되돌렸습니다');
 
   // 다시 검사 목록에 미검사 20으로 나오고, 합격 처리된다
-  await inspector.goto('/Inspections');
-  await expect(inspector.locator('tr', { hasText: lotNo })).toContainText('20 / 20');
+  // 다시 검사 목록에 미검사 20으로 나오고, 합격 처리된다(아래 '최근 처리 내역' 표는 제외)
+  await expect(inspector.locator('table:not(#recent-work) tr', { hasText: lotNo })).toContainText('20 / 20');
   expect(await inspect(inspector, lotNo, 20, 'Pass')).toBe(0);
 
   const admin = await loginAs(browser, 'admin');

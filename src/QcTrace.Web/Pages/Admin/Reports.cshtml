@@ -22,7 +22,7 @@ else
         @foreach (var a in Model.OpenAlerts)
         {
             <tr class="table-danger">
-                <td><a asp-page="/Admin/Ledger" asp-route-LotNo="@a.LotNo">@a.LotNo</a></td>
+                <td><partial name="_LotLink" model="a.LotNo" /></td>
                 <td>@a.ItemCode</td>
                 <td>@Kst.Format(a.RequestedAt)</td>
                 <td class="text-end">@(a.Hours)시간</td>
@@ -43,7 +43,7 @@ else
             @foreach (var a in Model.ClosedAlerts)
             {
                 <tr>
-                    <td><a asp-page="/Admin/Ledger" asp-route-LotNo="@a.LotNo">@a.LotNo</a></td>
+                    <td><partial name="_LotLink" model="a.LotNo" /></td>
                     <td>@a.ItemCode</td>
                     <td>@Kst.Format(a.RequestedAt)</td>
                     <td>@Kst.Format(a.DetectedAt)</td>
