@@ -10,7 +10,9 @@ namespace QcTrace.Web.Pages.Shipments;
 public class IndexModel(QcTraceDbContext db, QcCommands qc) : QcPageModel
 {
     public List<Lot> Lots { get; private set; } = [];
-    public List<Shipment> Recent { get; private set; } = [];
+    public List<RecentShipment> Recent { get; private set; } = [];
+
+    public sealed record RecentShipment(DateTime CreatedAt, string LotNo, int Qty, string? Destination);
 
     public async Task OnGetAsync() => await LoadAsync();
 
@@ -32,6 +34,11 @@ public class IndexModel(QcTraceDbContext db, QcCommands qc) : QcPageModel
             .Where(l => l.Quantity!.Reserved > 0)
             .OrderBy(l => l.CreatedAt)
             .ToListAsync();
-        Recent = await db.Shipments.AsNoTracking().OrderByDescending(s => s.CreatedAt).Take(10).ToListAsync();
+        Recent = await (
+            from s in db.Shipments.AsNoTracking()
+            join l in db.Lots on s.LotId equals l.Id
+            orderby s.CreatedAt descending
+            select new RecentShipment(s.CreatedAt, l.LotNo, s.Qty, s.Destination))
+            .Take(10).ToListAsync();
     }
 }

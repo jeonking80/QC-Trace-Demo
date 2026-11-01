@@ -37,6 +37,6 @@
 {
     <h2 class="h6 mt-4">최근 출하</h2>
     <ul class="small">
-        @foreach (var s in Model.Recent) { <li>@Kst.Format(s.CreatedAt) · LOT #@s.LotId · @(s.Qty)개 · @s.Destination</li> }
+        @foreach (var s in Model.Recent) { <li>@Kst.Format(s.CreatedAt) · @s.LotNo · @(s.Qty)개 · @s.Destination</li> }
     </ul>
 }

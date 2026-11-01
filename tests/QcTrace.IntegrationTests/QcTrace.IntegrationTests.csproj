@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\QcTrace.Web\QcTrace.Web.csproj" />
+    <ProjectReference Include="..\..\tools\Reconcile\QcTrace.Reconcile.csproj" />
   </ItemGroup>
 
 </Project>

@@ -5,6 +5,7 @@
 
 - `V1/` → 마이그레이션 `StoredProcedures`: 검사·승인·출하 SP, 앱 역할
 - 마이그레이션 `DelayAlerts`(SQL 파일 없음): 검사 지연 알림 테이블, 추가 전용 트리거, 앱 계정은 INSERT만(UPDATE·DELETE 거부)
+- `V6/` → 마이그레이션 `ReinspectStatus`: 전량 재검사 후 LOT이 검사 완료로 남아 검사 목록에서 빠지던 문제 수정(상태 갱신 SP), 그렇게 남은 LOT 바로잡기
 - `V5/` → 마이그레이션 `DailySummary`: 일일 검사·출하 집계 뷰(`vw_DailyQcSummary`). 불합격률은 처음 판정 기준(정정 전)
 - `V4/` → 마이그레이션 `AdminTools`: 역할 변경 SP(`usp_SetUserRoles`), 재고 대사 뷰(`vw_LotReconciliation`), 앱 계정의 UserRoles·RoleChanges 직접 쓰기 거부
 - `V3/` → 마이그레이션 `SpecCheck`: 검사 SP에 R11 규격 검사 추가
