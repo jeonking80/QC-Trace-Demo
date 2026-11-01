@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Data\Seed\seed.sql" LogicalName="QcTrace.Web.Data.Seed.seed.sql" />
+    <EmbeddedResource Include="Data\Sql\**\*.sql" />
   </ItemGroup>
 
 </Project>

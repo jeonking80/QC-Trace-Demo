@@ -35,9 +35,10 @@ public static class DbSeeder
         ("norole", "역할 없음 (권한 확인용)", null),
     ];
 
-    public static async Task SeedAsync(IServiceProvider services, IConfiguration configuration, ILogger logger)
+    /// <param name="adminDb">관리자 연결 컨텍스트. seed.sql은 앱 계정이 직접 쓸 수 없는 수량·이력 테이블에 쓰므로 이 연결로 실행한다.</param>
+    public static async Task SeedAsync(IServiceProvider services, QcTraceDbContext adminDb, IConfiguration configuration, ILogger logger)
     {
-        var db = services.GetRequiredService<QcTraceDbContext>();
+        var db = adminDb;
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = services.GetRequiredService<UserManager<AppUser>>();
         var password = configuration["Seed:DemoPassword"] ?? "QcTrace!2026";

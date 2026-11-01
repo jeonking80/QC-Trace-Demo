@@ -10,7 +10,6 @@ using QcTrace.Web.Api;
 using QcTrace.Web.Auth;
 using QcTrace.Web.Data;
 using QcTrace.Web.Data.Entities;
-using QcTrace.Web.Data.Seed;
 using QcTrace.Web.Health;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,6 +25,7 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AllowAnonymousToPage("/Status");
 });
 builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 
 // Razor 출력에서 한글을 &#x...; 문자 참조로 바꾸지 않는다
 builder.Services.Configure<WebEncoderOptions>(options =>
@@ -37,7 +37,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 builder.Services.AddDbContext<QcTraceDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("QcTrace"),
-        sql => sql.EnableRetryOnFailure()));
+        // 일시 장애만 짧게 재시도한다. 길게 재시도하면 DB가 꺼졌을 때 API 응답이 늦어진다.
+        sql => sql.EnableRetryOnFailure(maxRetryCount: 2, maxRetryDelay: TimeSpan.FromSeconds(1), errorNumbersToAdd: null)));
 
 // Identity 쿠키 로그인. 계정은 시드와 관리자 화면에서만 만든다(회원 가입 없음).
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
@@ -85,15 +86,14 @@ var healthJsonOptions = new JsonSerializerOptions
 
 var app = builder.Build();
 
-// 첫 실행 시 마이그레이션 적용과 시드 적재 (Database:MigrateOnStartup=false로 끌 수 있다)
+// 첫 실행 시 마이그레이션·앱 DB 계정·시드 (Database:MigrateOnStartup=false로 끌 수 있다)
 if (app.Configuration.GetValue("Database:MigrateOnStartup", true))
 {
     using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<QcTraceDbContext>();
-    await db.Database.MigrateAsync();
-    await DbSeeder.SeedAsync(scope.ServiceProvider, app.Configuration, app.Logger);
+    await DatabaseSetup.InitializeAsync(scope.ServiceProvider, app.Configuration, app.Logger);
 }
 
+// /api 예외는 ApiExceptionHandler가 ProblemDetails로, 화면 예외는 /Error 페이지로 보낸다
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
