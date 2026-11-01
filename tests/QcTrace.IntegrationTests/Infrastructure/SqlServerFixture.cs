@@ -53,6 +53,10 @@ public sealed class SqlServerFixture : IAsyncLifetime
 
     public Task DisposeAsync() => _container.DisposeAsync().AsTask();
 
+    /// <summary>조회 검증용 DbContext(관리자 연결)</summary>
+    public QcTraceDbContext CreateDbContext() =>
+        new(new DbContextOptionsBuilder<QcTraceDbContext>().UseSqlServer(AdminConnectionString).Options);
+
     // inspector_approver는 검사자·승인권자 역할을 둘 다 가진 사용자다(R5 확인용)
     private static readonly (string UserName, string[] Roles)[] TestUsers =
     [

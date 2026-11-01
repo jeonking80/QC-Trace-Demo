@@ -21,6 +21,7 @@ public class QcTraceDbContext(DbContextOptions<QcTraceDbContext> options)
     public DbSet<QcRequest> QcRequests => Set<QcRequest>();
     public DbSet<RoleChange> RoleChanges => Set<RoleChange>();
     public DbSet<DelayAlert> DelayAlerts => Set<DelayAlert>();
+    public DbSet<ScheduleEvent> ScheduleEvents => Set<ScheduleEvent>();
 
     private const string UtcNow = "SYSUTCDATETIME()";
 
@@ -85,6 +86,9 @@ public class QcTraceDbContext(DbContextOptions<QcTraceDbContext> options)
             e.Property(x => x.Shift).HasMaxLength(20);
             e.Property(x => x.Status).HasMaxLength(20);
             e.Property(x => x.CreatedAt).HasDefaultValueSql(UtcNow);
+            e.Property(x => x.Priority).HasMaxLength(10).HasDefaultValue(LotPriority.Normal);
+            e.Property(x => x.PriorityReason).HasMaxLength(500);
+            e.Property(x => x.ScheduleState).HasMaxLength(20);
             e.Property(x => x.RowVersion).IsRowVersion();
             e.HasIndex(x => x.LotNo).IsUnique();
             e.HasIndex(x => new { x.Status, x.ProducedOn });
@@ -95,6 +99,11 @@ public class QcTraceDbContext(DbContextOptions<QcTraceDbContext> options)
                 t.HasCheckConstraint("CK_Lots_ProducedQty", "[ProducedQty] > 0");
                 t.HasCheckConstraint("CK_Lots_Status",
                     $"[Status] IN ({string.Join(", ", LotStatus.All.Select(s => $"'{s}'"))})");
+                t.HasCheckConstraint("CK_Lots_Priority", "[Priority] IN ('Normal', 'Urgent')");
+                t.HasCheckConstraint("CK_Lots_UrgentReason",
+                    "[Priority] <> 'Urgent' OR ([PriorityReason] IS NOT NULL AND LEN(LTRIM(RTRIM([PriorityReason]))) > 0)");
+                t.HasCheckConstraint("CK_Lots_ScheduleState",
+                    $"[ScheduleState] IS NULL OR [ScheduleState] IN ({string.Join(", ", ScheduleState.All.Select(s => $"'{s}'"))})");
             });
         });
 
@@ -209,6 +218,27 @@ public class QcTraceDbContext(DbContextOptions<QcTraceDbContext> options)
             e.HasIndex(x => x.LotId).IsUnique();
             e.HasIndex(x => x.DetectedAt);
             LotFk(e, x => x.LotId);
+        });
+
+        b.Entity<ScheduleEvent>(e =>
+        {
+            e.ToTable("ScheduleEvents", t =>
+            {
+                t.HasTrigger(AppendOnlyTriggerName("ScheduleEvents"));
+                t.HasCheckConstraint("CK_ScheduleEvents_Kind",
+                    $"[Kind] IN ({string.Join(", ", ScheduleEventKind.All.Select(s => $"'{s}'"))})");
+                // 회신·거절·결정은 사유 필수
+                t.HasCheckConstraint("CK_ScheduleEvents_Reason",
+                    "[Kind] NOT IN ('Propose', 'Reject', 'Decide') OR ([Reason] IS NOT NULL AND LEN(LTRIM(RTRIM([Reason]))) > 0)");
+            });
+            e.Property(x => x.Kind).HasMaxLength(20);
+            e.Property(x => x.Priority).HasMaxLength(10);
+            e.Property(x => x.Reason).HasMaxLength(500);
+            e.Property(x => x.CreatedAt).HasDefaultValueSql(UtcNow);
+            e.HasIndex(x => new { x.LotId, x.CreatedAt });
+            e.HasIndex(x => x.CreatedAt);
+            LotFk(e, x => x.LotId);
+            UserFk(e, x => x.ActorId);
         });
 
         b.Entity<QcRequest>(e =>

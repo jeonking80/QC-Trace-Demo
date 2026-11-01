@@ -21,6 +21,7 @@ public class LotModel(QcTraceDbContext db) : QcPageModel
     public List<LedgerText.Event> Dispositions { get; private set; } = [];
     public List<LedgerText.Event> Timeline { get; private set; } = [];
     public List<string> Inspectors { get; private set; } = [];
+    public List<Services.Schedule.HistoryRow> Schedule { get; private set; } = [];
 
     public sealed record Measurement(string Name, string Value, string Spec, bool? InSpec);
     public sealed record InspectionView(long Id, DateTime CreatedAt, string Inspector, int Qty, string Verdict, string? Reason,
@@ -35,6 +36,7 @@ public class LotModel(QcTraceDbContext db) : QcPageModel
         if (lot is null) return NotFound();
         Lot = lot;
         NextSteps = LotNextStep.For(lot, lot.Quantity);
+        Schedule = await Services.Schedule.HistoryAsync(db, lot.Id);
 
         var specs = await db.InspectionItems.AsNoTracking().Where(i => i.ItemId == lot.ItemId).ToListAsync();
         var inspections = await (

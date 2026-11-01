@@ -10,18 +10,33 @@ test('관리자 첫 화면은 대시보드이고 프레임워크 없이 값을 �
   await expect(admin.locator('[data-kpi="waiting"]')).not.toHaveText('–');
   expect(await admin.evaluate(() => !!(window.React || window.Vue || window.angular))).toBe(false);
   await shot(admin, '02-dashboard');
+  // 상단 카드를 누르면 해당 LOT 목록이 열린다(집 PC 피드백: 눌러도 스크롤만 됨)
+  await admin.click('a.kpi[href="/Trace?need=delayed"]');
+  await expect(admin).toHaveURL(/\/Trace\?need=delayed/);
+  await expect(admin.locator('#trace-need')).toContainText('검사 지연');
+  expect(await admin.locator('#trace-lots tbody a.lot-link').count()).toBeGreaterThan(0);
+  await admin.goBack();
   await admin.goto('/Admin/Reports');
   await expect(admin.locator('h1')).toHaveText('보고서·알림');
   await shot(admin, '10-reports');
 });
 
-test('생산 담당도 LOT 조회·상세에서 불합격 사유와 다음 할 일을 본다 (집 PC 피드백 B1·B2·B4)', async ({ browser }) => {
+test('생산 담당은 LOT 화면 하나에서 찾고, 상세에서 불합격 사유와 다음 할 일을 본다 (집 PC 피드백 B1·B2·B4, 메뉴 통합)', async ({ browser }) => {
+  // 다른 역할은 "LOT 조회" 메뉴로 찾는다
+  const inspector = await loginAs(browser, 'inspector1');
+  await inspector.goto('/Trace');
+  await expect(inspector.locator('h1')).toHaveText('LOT 조회');
+  await expect(inspector.locator('nav a', { hasText: 'LOT 조회' })).toHaveCount(1);
+  await shot(inspector, '11-lot-search');
+
+  // 생산 담당은 "LOT" 메뉴만 있고, LOT 화면에서 번호로 찾는다
   const producer = await loginAs(browser, 'producer');
-  await producer.goto('/Trace');
-  await expect(producer.locator('h1')).toHaveText('LOT 조회');
-  await shot(producer, '11-lot-search');
+  await expect(producer.locator('nav a', { hasText: 'LOT 조회' })).toHaveCount(0);
+  await producer.goto('/Lots');
+  await producer.fill('#Q', '-002');
+  await producer.click('#lot-search button');
   // 시드 2번 LOT(LOT-날짜-002): 합격분은 출하됐지만 불합격이 남아 '출하 완료'가 아니다(A2)
-  await producer.locator('#trace-lots a.lot-link', { hasText: /-002$/ }).click();
+  await producer.locator('a.lot-link', { hasText: /\d{8}-002$/ }).first().click();
   await expect(producer).toHaveURL(/\/Trace\/Lot\/LOT-\d{8}-002/);
   await expect(producer.locator('h1')).not.toContainText('출하 완료');
   await expect(producer.locator('#next-steps')).toContainText('재검사 또는 폐기');

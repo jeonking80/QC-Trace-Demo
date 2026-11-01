@@ -36,6 +36,7 @@ public static class SqlErrors
             52013 => new Error(StatusCodes.Status422UnprocessableEntity, "업무 규칙 위반", sql.Message, "dispose_over_failed"),
             52014 => new Error(StatusCodes.Status422UnprocessableEntity, "업무 규칙 위반", sql.Message, "R11"),
             52015 => new Error(StatusCodes.Status422UnprocessableEntity, "업무 규칙 위반", sql.Message, "R11"),
+            52020 => new Error(StatusCodes.Status422UnprocessableEntity, "검사 일정 규칙 위반", sql.Message, "schedule"),
             // Class 20 이상은 연결이 끊긴 심각한 오류다
             _ when Unavailable.Contains(sql.Number) || sql.Class >= 20 =>
                 new Error(StatusCodes.Status503ServiceUnavailable, "데이터베이스에 연결할 수 없습니다.", "잠시 뒤 다시 시도하세요.", "db_unavailable"),

@@ -9,7 +9,7 @@
 <partial name="_StatusMessage" model="Model.StatusMessage" />
 
 <h2 class="h5 mt-3">검사 지연 알림 <span class="badge bg-danger" id="open-alert-count">@Model.OpenAlerts.Count</span></h2>
-<p class="text-muted small">검사 의뢰 후 @((int)QcQueries.DelayThreshold.TotalHours)시간이 지나도 미검사가 남은 LOT입니다. 1분마다 확인해 처음 발견한 시각을 기록합니다(기록은 지우거나 고칠 수 없음).</p>
+<p class="text-muted small">검사 기한이 있으면 그 기한, 없으면 검사 의뢰 후 @((int)QcQueries.DelayThreshold.TotalHours)시간이 지나도 미검사가 남은 LOT입니다. 1분마다 확인해 처음 발견한 시각을 기록합니다(기록은 지우거나 고칠 수 없음).</p>
 @if (Model.OpenAlerts.Count == 0)
 {
     <p class="text-success" id="no-open-alerts">지금 지연된 LOT이 없습니다.</p>

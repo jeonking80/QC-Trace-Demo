@@ -31,6 +31,22 @@ public sealed class Db(SqlServerFixture fixture)
     public Task<SpResult> RequestInspection(string key, int lotId, string producer) =>
         CallAsync("dbo.usp_RequestInspection", ("@RequestKey", key), ("@LotId", lotId), ("@ProducerId", User(producer)));
 
+    public Task<SpResult> RequestInspection(string key, int lotId, string producer, string priority, string? priorityReason, DateTime? dueAtUtc) =>
+        CallAsync("dbo.usp_RequestInspection", ("@RequestKey", key), ("@LotId", lotId), ("@ProducerId", User(producer)),
+            ("@Priority", priority), ("@PriorityReason", priorityReason), ("@DueAt", dueAtUtc));
+
+    public Task<SpResult> ProposeSchedule(string key, int lotId, string inspector, DateTime dueAtUtc, string? reason) =>
+        CallAsync("dbo.usp_ProposeSchedule", ("@RequestKey", key), ("@LotId", lotId), ("@InspectorId", User(inspector)),
+            ("@DueAt", dueAtUtc), ("@Reason", reason));
+
+    public Task<SpResult> RespondSchedule(string key, int lotId, string producer, string decision, string? reason) =>
+        CallAsync("dbo.usp_RespondSchedule", ("@RequestKey", key), ("@LotId", lotId), ("@ProducerId", User(producer)),
+            ("@Decision", decision), ("@Reason", reason));
+
+    public Task<SpResult> DecideSchedule(string key, int lotId, string decider, DateTime dueAtUtc, string? reason) =>
+        CallAsync("dbo.usp_DecideSchedule", ("@RequestKey", key), ("@LotId", lotId), ("@DeciderId", User(decider)),
+            ("@DueAt", dueAtUtc), ("@Reason", reason));
+
     public Task<SpResult> DisposeFailed(string key, int lotId, string inspector, int qty, string action, string? reason) =>
         CallAsync("dbo.usp_DisposeFailed",
             ("@RequestKey", key), ("@LotId", lotId), ("@InspectorId", User(inspector)), ("@Qty", qty),

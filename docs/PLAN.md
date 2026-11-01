@@ -67,6 +67,17 @@ Oct 30, 2026 · @사장
 
 R11은 2026-11-01 단위 6 검증에서 나온 문제(서버가 규격 밖 측정값의 합격을 받음)를 사용자가 "합격 거절"로 결정해 새 번호로 추가했습니다. 규격은 요청에 담긴 값이 아니라 `InspectionItems`의 하한·상한을 쓰고, 경계값(하한·상한과 같은 값)은 규격 안입니다. 이어서 사용자 결정으로 합격은 그 품목의 검사 항목 전부를 측정해야 저장됩니다. 측정값 생략·빈 값·일부 누락은 합격으로 받지 않고, 정정으로 합격으로 바꿀 때도 새 측정값 전체가 필요합니다. 불합격·보류는 미측정 항목을 허용합니다. 검사 항목이 없는 품목은 측정값 없이 합격할 수 있습니다. 숫자가 아닌 값, 그 품목의 검사 항목이 아닌 값은 입력 오류로 거절합니다. 이미 적재된 시드 기록에는 소급 적용하지 않습니다.
 
+**검사 일정 협의** (2026-11-01 사용자 요청·결정)
+
+수량을 바꾸지 않는 일정 약속도 서버(저장 프로시저)가 검사하고, 기록은 `ScheduleEvents`에 추가만 합니다.
+
+1. 생산 담당이 검사를 의뢰할 때 보통/긴급과 희망 완료 기한(선택)을 고릅니다. 긴급은 사유가 필수이고, 기한은 지금 이후여야 합니다.
+2. 검사자 목록은 긴급 → 기한 빠른 순 → 의뢰 오래된 순으로 보이고, "D-1"·"2시간 초과"처럼 남은 시간을 표시합니다.
+3. 검사자는 미검사가 남은 LOT(부분 검사 포함)에 "나머지는 언제까지"라는 완료 예정 시각과 사유(필수)를 회신합니다. 확인·결정을 기다리는 회신이 있으면 새로 보낼 수 없습니다.
+4. 생산 담당이 수락하면 그 시각이 검사 기한이 됩니다. 거절(사유 필수)하면 바로 결정권자에게 넘어갑니다.
+5. 결정권자는 관리자와 승인권자 둘 다이고, 어느 쪽이든 최종 기한(사유 필수)을 정할 수 있습니다. 대시보드 조치 목록에 "일정 결정 필요"로 올라옵니다. 결정권자가 한 번 정한 기한은, 검사자가 새로 회신하고 생산 담당이 수락해도 바로 바뀌지 않고 결정권자 확인을 다시 거칩니다(2026-11-01 사용자 결정).
+6. 검사 지연은 기한이 있으면 그 기한, 없으면 의뢰 후 48시간이 기준입니다. 지연 알림(`DelayAlerts`)은 지금처럼 LOT당 처음 한 번만 기록하므로, 한 번 알림이 남은 LOT은 기한이 바뀌어 다시 넘겨도 새로 기록하지 않습니다(대시보드·검사자 목록에는 현재 기한 기준으로 계속 지연으로 보입니다).
+
 **수량 지표** (LOT 단위)
 
 - 생산 수량 = 미검사 + 합격 + 불합격 + 보류 + 폐기
@@ -81,12 +92,13 @@ R11은 2026-11-01 단위 6 검증에서 나온 문제(서버가 규격 밖 측�
 | 화면 | 사용자 | 핵심 요소 | 구현 방식 |
 | --- | --- | --- | --- |
 | 로그인 | 전체 | 아이디·비밀번호, 역할별 진입 화면 분기 | Razor Pages |
-| 운영 대시보드 | 관리자 | 검사 대기·지연 LOT·불합격률·불합격 처리(대기·오늘 폐기·재검사)·당일 출하, 조치 목록, 지표 설명 | 순수 HTML·JavaScript + fetch API |
-| LOT 목록·등록 | 생산 담당 | 품목·수량·생산일 입력, 상태별 필터 | Razor Pages |
-| 검사 입력 | 검사자 | 항목별 측정값, 자동 판정, 부분 검사 잔량 표시 | Razor Pages + JS 입력 검증 |
+| 운영 대시보드 | 관리자 | 검사 대기·지연 LOT·불합격률·불합격 처리(대기·오늘 폐기·재검사)·당일 출하(카드를 누르면 해당 LOT 목록), 조치 목록(일정 결정 필요 포함), 지표 설명 | 순수 HTML·JavaScript + fetch API |
+| LOT 목록·등록 | 생산 담당 | 품목·수량·생산일 입력, 상태별 필터, 검사 의뢰(보통/긴급·희망 기한), 검사자 일정 회신 수락/거절 | Razor Pages |
+| 검사 입력 | 검사자 | 항목별 측정값, 자동 판정, 부분 검사 잔량 표시. 목록은 긴급·기한 순, 남은 미검사의 완료 예정 시각·사유 회신 | Razor Pages + JS 입력 검증 |
 | 불합격 처리 | 검사자 | 재검사·폐기 선택, 사유 필수 | Razor Pages |
 | 출하 승인 | 승인권자 | 본인 LOT은 버튼 비활성화 + 안내 문구 | Razor Pages |
 | 출하 실적 | 출하 담당 | 승인 수량 내 출하, 초과 시 거절 메시지 | Razor Pages |
+| 일정 결정 | 관리자·승인권자 | 생산 담당이 거절한 검사 일정의 최종 기한·사유 입력, 기한 초과 LOT, 최근 일정 협의 | Razor Pages |
 | 이력 원장 | 관리자 | LOT·작업자·기간 필터, 한 작업을 한 줄·한글로 표시(원장 행 그대로 보기 전환), LOT을 고르면 오래된 순, CSV 내려받기 | Razor Pages |
 | LOT 조회·상세 | 역할이 있는 전체 | LOT 번호·품목 검색, 상태 필터. 상세: 수량, 다음 할 일과 담당 역할, 검사 사유·측정값·검사자, 불합격 처리, 승인·출하, 전체 이력. 모든 화면의 LOT 번호가 상세로 연결 | Razor Pages |
 | 재고 대사 | 관리자 | LOT별 수량 등식 확인, 불일치 강조 | Razor Pages |
@@ -136,7 +148,7 @@ R11은 2026-11-01 단위 6 검증에서 나온 문제(서버가 규격 밖 측�
 | Items | 품목 기준정보 | ItemCode, Name, Spec, IsActive |
 | InspectionItems | 품목별 검사 항목 | ItemId, Name, Lower, Upper, Unit |
 | Users / Roles | 사용자·역할 (Identity) | UserName, Role (생산·검사·승인·출하·관리자) |
-| Lots | 생산 LOT 현재 상태 | LotNo, ItemId, ProducedQty, Status, InspectionRequestedAt, RowVersion |
+| Lots | 생산 LOT 현재 상태 | LotNo, ItemId, ProducedQty, Status, InspectionRequestedAt, Priority, PriorityReason, DueAt, ScheduleState, ProposedDueAt, RowVersion |
 | LotQuantities | LOT별 수량 지표 | LotId, Uninspected, Passed, Failed, Held, Scrapped, Shipped, Reserved |
 | Inspections | 검사 실적 (추가만) | LotId, InspectorId, Qty, Verdict, MeasuredJson, Reason, CorrectsInspectionId, CreatedAt |
 | ShipmentApprovals | 출하 승인 (추가만) | LotId, ApproverId, ApprovedQty, Decision, Reason, CreatedAt |
@@ -145,6 +157,7 @@ R11은 2026-11-01 단위 6 검증에서 나온 문제(서버가 규격 밖 측�
 | QcRequests | 멱등 요청 저장 | RequestKey (unique), Operation, BodyHash, ResponseJson, CreatedAt |
 | RoleChanges | 역할 변경 이력 (추가만) | UserId, RoleName, Change(Add·Remove), ActorId, Reason, CreatedAt |
 | DelayAlerts | 검사 지연 알림 기록 (추가만, LOT당 1건) | LotId (unique), InspectionRequestedAt, UninspectedAtDetection, DetectedAt |
+| ScheduleEvents | 검사 일정 협의 기록 (추가만, 수량 원장과 별도) | LotId, Kind(Request·Propose·Accept·Reject·Decide), Priority, DueAt, Reason, ActorId, CreatedAt |
 
 **설계 원칙**
 
@@ -208,6 +221,7 @@ R11은 2026-11-01 단위 6 검증에서 나온 문제(서버가 규격 밖 측�
 | 8 | 대시보드 | 순수 HTML·JS, fetch로 /api/dashboard 호출, 조치 목록 클릭 시 해당 화면 이동 | React 없이 동작 | 3 |
 | 9 | 자동화 | Hosted Service로 매일 08:00 엑셀 보고서 생성, 검사 지연 LOT(48시간 초과) 알림 목록 | 보고서 파일 생성 확인 | 4 |
 | 10 | 독립 대조·E2E·문서 | 콘솔 대조 앱, Playwright 시나리오 3개, README·추적표·화면 캡처 | 전부 통과, 캡처 10장 | 4 |
+| 추가 | 검사 일정 협의·대시보드 카드 (2026-11-01) | 긴급·희망 기한 의뢰, 검사자 회신, 수락/거절, 결정권자 최종 기한, 카드 → LOT 목록 | 전부 통과, 캡처 15장 | - |
 | 추가 | 집 PC 사용 피드백 반영 (2026-11-01) | A1 시드 검사 의뢰 원장, A2 불합격 남은 LOT의 출하 완료 표시, A3 데모 비밀번호, B1~B6 사용성 | 전부 통과, 캡처 12장 | - |
 
 **세션 운영 규칙**

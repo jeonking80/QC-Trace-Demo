@@ -482,6 +482,9 @@ namespace QcTrace.Web.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTime?>("DueAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime?>("InspectionRequestedAt")
                         .HasColumnType("datetime2");
 
@@ -493,17 +496,35 @@ namespace QcTrace.Web.Data.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("Normal");
+
+                    b.Property<string>("PriorityReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<DateOnly>("ProducedOn")
                         .HasColumnType("date");
 
                     b.Property<int>("ProducedQty")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("ProposedDueAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
+
+                    b.Property<string>("ScheduleState")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Shift")
                         .IsRequired()
@@ -528,9 +549,15 @@ namespace QcTrace.Web.Data.Migrations
 
                     b.ToTable("Lots", t =>
                         {
+                            t.HasCheckConstraint("CK_Lots_Priority", "[Priority] IN ('Normal', 'Urgent')");
+
                             t.HasCheckConstraint("CK_Lots_ProducedQty", "[ProducedQty] > 0");
 
+                            t.HasCheckConstraint("CK_Lots_ScheduleState", "[ScheduleState] IS NULL OR [ScheduleState] IN ('Proposed', 'Accepted', 'Escalated', 'Decided')");
+
                             t.HasCheckConstraint("CK_Lots_Status", "[Status] IN ('Registered', 'Waiting', 'Inspecting', 'Inspected', 'Shipped')");
+
+                            t.HasCheckConstraint("CK_Lots_UrgentReason", "[Priority] <> 'Urgent' OR ([PriorityReason] IS NOT NULL AND LEN(LTRIM(RTRIM([PriorityReason]))) > 0)");
                         });
                 });
 
@@ -666,6 +693,62 @@ namespace QcTrace.Web.Data.Migrations
                             t.HasCheckConstraint("CK_RoleChanges_Change", "[Change] IN ('Add', 'Remove')");
 
                             t.HasCheckConstraint("CK_RoleChanges_Reason", "LEN(LTRIM(RTRIM([Reason]))) > 0");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
+            modelBuilder.Entity("QcTrace.Web.Data.Entities.ScheduleEvent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("ActorId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<DateTime?>("DueAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("LotId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Priority")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("LotId", "CreatedAt");
+
+                    b.ToTable("ScheduleEvents", null, t =>
+                        {
+                            t.HasTrigger("TR_ScheduleEvents_AppendOnly");
+
+                            t.HasCheckConstraint("CK_ScheduleEvents_Kind", "[Kind] IN ('Request', 'Propose', 'Accept', 'Reject', 'Decide')");
+
+                            t.HasCheckConstraint("CK_ScheduleEvents_Reason", "[Kind] NOT IN ('Propose', 'Reject', 'Decide') OR ([Reason] IS NOT NULL AND LEN(LTRIM(RTRIM([Reason]))) > 0)");
                         });
 
                     b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
@@ -912,6 +995,21 @@ namespace QcTrace.Web.Data.Migrations
                     b.HasOne("QcTrace.Web.Data.Entities.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("QcTrace.Web.Data.Entities.ScheduleEvent", b =>
+                {
+                    b.HasOne("QcTrace.Web.Data.Entities.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("QcTrace.Web.Data.Entities.Lot", null)
+                        .WithMany()
+                        .HasForeignKey("LotId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

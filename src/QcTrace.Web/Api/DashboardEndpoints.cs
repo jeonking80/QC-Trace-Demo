@@ -48,7 +48,7 @@ public static class DashboardEndpoints
             .Select(l => new
             {
                 l.Id, l.LotNo, l.Status, l.InspectionRequestedAt, l.Item.ItemCode, ItemName = l.Item.Name,
-                q = l.Quantity!
+                q = l.Quantity!, l.ScheduleState, l.ProposedDueAt
             })
             .ToListAsync();
 
@@ -74,15 +74,18 @@ public static class DashboardEndpoints
 
         // 불합격 처리 현황(집 PC 피드백 B6): 처리 대기 불합격 수량(모든 LOT), 오늘 폐기·재검사로 돌린 수량
         var todayFromUtc = Kst.StartOfDayUtc(today);
+        var tomorrowFromUtc = Kst.StartOfDayUtc(today.AddDays(1));   // 일별 뷰와 같은 기준: 오늘 00:00 이상, 내일 00:00 미만
         var pendingFailed = await db.LotQuantities.AsNoTracking().Where(q => q.Failed > 0)
             .GroupBy(_ => 1).Select(g => new { Qty = g.Sum(q => q.Failed), Lots = g.Count() }).FirstOrDefaultAsync();
         var disposedToday = await db.Ledger.AsNoTracking()
-            .Where(l => l.CreatedAt >= todayFromUtc && l.Delta > 0
+            .Where(l => l.CreatedAt >= todayFromUtc && l.CreatedAt < tomorrowFromUtc && l.Delta > 0
                         && ((l.Kind == LedgerKind.Scrap && l.DeltaField == "Scrapped") || (l.Kind == LedgerKind.Reinspect && l.DeltaField == "Uninspected")))
             .GroupBy(l => l.Kind).Select(g => new { Kind = g.Key, Qty = g.Sum(l => l.Delta) }).ToListAsync();
 
         var actions = BuildActions(open.Select(l => (l.Id, l.LotNo, l.Status, l.ItemCode, l.q, l.InspectionRequestedAt)).ToList(),
-            delayed, mismatches, user, now);
+            delayed, mismatches, user, now,
+            open.Where(l => l.ScheduleState is ScheduleState.Proposed or ScheduleState.Escalated && l.q.Uninspected > 0)
+                .Select(l => (l.LotNo, l.ScheduleState!, l.ProposedDueAt)).ToList());
 
         return Results.Json(new
         {
@@ -113,12 +116,13 @@ public static class DashboardEndpoints
     private static decimal? RateOf(int inspected, int failed) => inspected == 0 ? null : Math.Round((decimal)failed / inspected, 4);
 
     /// <summary>
-    /// 조치 목록. 위험도 순(대사 불일치 → 검사 지연 → 보류·불합격 처리 → 승인·출하 대기 → 의뢰 대기).
+    /// 조치 목록. 위험도 순(대사 불일치 → 일정 결정 필요 → 검사 지연 → 보류·불합격 처리 → 승인·출하 대기 → 일정 회신 확인 → 의뢰 대기).
     /// 클릭하면 그 일을 처리하는 화면으로 간다. 보는 사람에게 그 화면 역할이 없으면 해당 LOT 상세로 간다.
     /// </summary>
     private static List<ActionItem> BuildActions(
         List<(int Id, string LotNo, string Status, string ItemCode, LotQuantity Q, DateTime? RequestedAt)> lots,
-        List<QcQueries.DelayedLot> delayed, List<string> mismatches, ClaimsPrincipal user, DateTime now)
+        List<QcQueries.DelayedLot> delayed, List<string> mismatches, ClaimsPrincipal user, DateTime now,
+        List<(string LotNo, string State, DateTime? ProposedDueAt)>? schedules = null)
     {
         // 보는 사람에게 처리 역할이 없으면 LOT 상세로 간다(집 PC 피드백 B1)
         string Ledger(string lotNo) => "/Trace/Lot/" + Uri.EscapeDataString(lotNo);
@@ -126,7 +130,11 @@ public static class DashboardEndpoints
 
         var list = new List<ActionItem>();
         list.AddRange(mismatches.Select(no => new ActionItem("mismatch", "danger", "재고 대사 불일치", "현재 수량과 원장·생산 등식이 맞지 않습니다", no, "관리자", "/Admin/Reconcile")));
-        list.AddRange(delayed.Select(d => new ActionItem("delayed", "danger", "검사 지연", $"의뢰 후 {d.Hours}시간, 미검사 {d.Uninspected}개", d.LotNo, "검사자",
+        // 검사 일정: 생산 담당이 거절한 회신은 결정권자(관리자·승인권자)에게 올라온다
+        foreach (var sc in (schedules ?? []).Where(x => x.State == ScheduleState.Escalated))
+            list.Add(new ActionItem("schedule", "danger", "일정 결정 필요", $"검사자 회신({Kst.Format(sc.ProposedDueAt)}까지)이 결정권자 확인 대기(거절 또는 확정 기한 변경)", sc.LotNo, "관리자·승인권자",
+                user.IsInRole(Roles.Admin) || user.IsInRole(Roles.Approver) ? "/Schedule" : Ledger(sc.LotNo)));
+        list.AddRange(delayed.Select(d => new ActionItem("delayed", "danger", d.Urgent ? "검사 지연 (긴급)" : "검사 지연", $"{d.Describe(now)}, 미검사 {d.Uninspected}개", d.LotNo, "검사자",
             Work(Roles.Inspector, $"/Inspections/Input/{d.LotId}", d.LotNo))));
         foreach (var l in lots)
         {
@@ -144,6 +152,9 @@ public static class DashboardEndpoints
             if (l.Q.Reserved > 0)
                 list.Add(new ActionItem("ship", "info", "출하 대기", $"승인 잔량 {l.Q.Reserved}개", l.LotNo, "출하 담당", Work(Roles.Shipper, "/Shipments", l.LotNo)));
         }
+        foreach (var sc in (schedules ?? []).Where(x => x.State == ScheduleState.Proposed))
+            list.Add(new ActionItem("schedule", "info", "일정 회신 확인 대기", $"검사자 회신 {Kst.Format(sc.ProposedDueAt)}까지 (수락·거절)", sc.LotNo, "생산 담당",
+                Work(Roles.Producer, "/Lots", sc.LotNo)));
         foreach (var l in lots.Where(l => l.Status == LotStatus.Registered))
             list.Add(new ActionItem("request", "info", "검사 의뢰 대기", "등록만 되고 검사 의뢰 전입니다", l.LotNo, "생산 담당", Work(Roles.Producer, "/Lots?status=Registered", l.LotNo)));
         return list;

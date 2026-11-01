@@ -10,6 +10,39 @@
 <partial name="_FlowGuide" model="@("produce")" />
 <partial name="_StatusMessage" model="Model.StatusMessage" />
 
+@if (Model.PendingProposals.Count > 0)
+{
+    <div class="card border-info mb-4" id="schedule-proposals">
+        <div class="card-body">
+            <h2 class="h5">검사자 일정 회신 확인 <span class="badge bg-info text-dark">@Model.PendingProposals.Count</span></h2>
+            <p class="small text-muted mb-2">검사자가 남은 미검사를 언제까지 하겠다고 알려 왔습니다. 수락하면 그 시각이 검사 기한이 되고, 거절하면(사유 필수) 결정권자(관리자·승인권자)가 최종 기한을 정합니다. 결정권자가 이미 기한을 정한 LOT은 수락해도 결정권자가 다시 확인합니다.</p>
+            <table class="table table-sm mb-0">
+                <thead><tr><th>LOT</th><th>남은 미검사</th><th>완료 예정</th><th>검사자·사유</th><th></th></tr></thead>
+                <tbody>
+                @foreach (var (lot, p) in Model.PendingProposals)
+                {
+                    <tr>
+                        <td><partial name="_LotLink" model="lot.LotNo" /><partial name="_ScheduleBadges" model="lot" /></td>
+                        <td>@lot.Quantity?.Uninspected / @lot.ProducedQty</td>
+                        <td class="text-nowrap">@Kst.Format(p.DueAt)</td>
+                        <td class="small">@p.Actor<div>@p.Reason</div></td>
+                        <td>
+                            <form method="post" asp-page-handler="RespondSchedule" asp-route-status="@Model.Status" asp-route-q="@Model.Q" class="d-flex flex-wrap gap-1">
+                                <input type="hidden" name="lotId" value="@lot.Id" />
+                                <input type="hidden" name="requestKey" value="@QcTrace.Web.Pages.QcPageModel.NewRequestKey()" />
+                                <input class="form-control form-control-sm" name="reason" placeholder="거절 사유 (거절할 때 필수)" style="min-width:12rem" />
+                                <button type="submit" name="decision" value="Accept" class="btn btn-sm btn-success">수락</button>
+                                <button type="submit" name="decision" value="Reject" class="btn btn-sm btn-outline-danger">거절</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
 <div class="card mb-4">
     <div class="card-body">
         <h2 class="h5">생산 LOT 등록</h2>
@@ -44,10 +77,19 @@
     </div>
 </div>
 
+<form method="get" class="row g-2 align-items-end mb-2" id="lot-search">
+    <div class="col-md-4">
+        <label class="form-label small mb-0" for="Q">LOT 번호 또는 품목 코드</label>
+        <input class="form-control form-control-sm" id="Q" name="Q" value="@Model.Q" placeholder="일부만 입력해도 됨" />
+    </div>
+    <input type="hidden" name="Status" value="@Model.Status" />
+    <div class="col-auto"><button class="btn btn-sm btn-primary">찾기</button></div>
+    @if (!string.IsNullOrWhiteSpace(Model.Q)) { <div class="col-auto"><a class="btn btn-sm btn-outline-secondary" asp-page="./Index" asp-route-status="@Model.Status">검색 지우기</a></div> }
+</form>
 <div class="mb-2">
     @foreach (var (value, label) in filters)
     {
-        <a class="btn btn-sm @(Model.Status == value ? "btn-dark" : "btn-outline-secondary")" asp-page="./Index" asp-route-status="@value">@label</a>
+        <a class="btn btn-sm @(Model.Status == value ? "btn-dark" : "btn-outline-secondary")" asp-page="./Index" asp-route-status="@value" asp-route-q="@Model.Q">@label</a>
     }
 </div>
 
@@ -63,6 +105,7 @@
             <td><partial name="_LotStatus" model="lot.Status" /></td>
             <td class="small">
                 <partial name="_QtyBadges" model="lot.Quantity" />
+                @if (lot.Status != "Registered") { <partial name="_ScheduleBadges" model="lot" /> }
                 @if (Model.LatestIssue.TryGetValue(lot.Id, out var issue))
                 {
                     <div class="text-muted">최근 @(issue.Verdict == "Fail" ? "불합격" : "보류") 사유: @issue.Reason (@issue.Inspector)</div>
@@ -71,10 +114,22 @@
             <td>
                 @if (lot.Status == "Registered")
                 {
-                    <form method="post" asp-page-handler="RequestInspection" asp-route-status="@Model.Status">
+                    <form method="post" asp-page-handler="RequestInspection" asp-route-status="@Model.Status" asp-route-q="@Model.Q" class="request-form">
                         <input type="hidden" name="lotId" value="@lot.Id" />
                         <input type="hidden" name="requestKey" value="@QcTrace.Web.Pages.QcPageModel.NewRequestKey()" />
                         <button type="submit" class="btn btn-sm btn-outline-primary">검사 의뢰</button>
+                        <details class="small mt-1">
+                            <summary>긴급·희망 기한 지정</summary>
+                            <div class="mt-1" style="min-width:14rem">
+                                <select name="priority" class="form-select form-select-sm mb-1" aria-label="우선순위">
+                                    <option value="Normal">보통</option>
+                                    <option value="Urgent">긴급 (사유 필수)</option>
+                                </select>
+                                <input name="priorityReason" class="form-control form-control-sm mb-1" maxlength="500" placeholder="긴급 사유 (예: 고객 납기 당김)" aria-label="긴급 사유" />
+                                <label class="form-label mb-0">희망 완료 기한 (선택)</label>
+                                <input name="dueAt" type="datetime-local" class="form-control form-control-sm" aria-label="희망 완료 기한" />
+                            </div>
+                        </details>
                     </form>
                 }
                 else if (lot.InspectionRequestedAt is not null)

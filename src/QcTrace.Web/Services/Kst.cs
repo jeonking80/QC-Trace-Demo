@@ -17,6 +17,13 @@ public static class Kst
     public static DateTime StartOfDayUtc(DateOnly kstDate) =>
         TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(kstDate.ToDateTime(TimeOnly.MinValue), DateTimeKind.Unspecified), Zone);
 
+    /// <summary>한국 시각(화면 입력값)을 UTC로</summary>
+    public static DateTime ToUtc(DateTime kstLocal) =>
+        TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(kstLocal, DateTimeKind.Unspecified), Zone);
+
+    /// <summary>datetime-local 입력 칸 값 형식(한국 시각)</summary>
+    public static string InputValue(DateTime utc) => FromUtc(utc).ToString("yyyy-MM-ddTHH:mm");
+
     public static DateOnly Today => DateOnly.FromDateTime(FromUtc(DateTime.UtcNow));
 
     private static TimeZoneInfo FindZone()

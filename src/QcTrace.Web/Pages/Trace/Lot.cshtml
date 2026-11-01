@@ -15,7 +15,8 @@
     @lot.Item.ItemCode @lot.Item.Name · 생산 @(lot.ProducedQty)개 · 생산일 @lot.ProducedOn.ToString("yyyy-MM-dd") @lot.Shift
     @if (lot.InspectionRequestedAt is not null) { <text>· 검사 의뢰 @Kst.Format(lot.InspectionRequestedAt)</text> }
 </p>
-<p class="small mb-3"><partial name="_QtyBadges" model="q" /></p>
+<p class="small mb-1"><partial name="_QtyBadges" model="q" /></p>
+<div class="mb-3"><partial name="_ScheduleBadges" model="lot" /></div>
 
 <div class="card mb-3" id="next-steps">
     <div class="card-body py-2">
@@ -29,7 +30,7 @@
         {
             <li>
                 <span class="badge bg-secondary">@s.RoleLabel</span> @s.Text
-                @if (User.IsInRole(s.Role)) { <a href="@s.Path">처리하러 가기</a> }
+                @if (LotNextStep.Can(User, s)) { <a href="@s.Path">처리하러 가기</a> }
             </li>
         }
         </ul>
@@ -74,6 +75,9 @@
     @if (Model.Dispositions.Count == 0) { <tr><td colspan="4" class="text-muted">불합격 처리 기록이 없습니다.</td></tr> }
     </tbody>
 </table>
+
+<h2 class="h5">검사 일정 협의 <span class="small text-muted">(긴급·기한 의뢰, 검사자 회신, 수락·거절, 최종 결정)</span></h2>
+<div id="lot-schedule"><partial name="_ScheduleHistory" model="Model.Schedule" /></div>
 
 <h2 class="h5">출하 승인·출하</h2>
 <table class="table table-sm" id="lot-shipping">

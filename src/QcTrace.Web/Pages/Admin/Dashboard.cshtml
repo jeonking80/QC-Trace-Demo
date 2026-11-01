@@ -13,23 +13,24 @@
 </div>
 <div id="dash-error" class="alert alert-danger d-none" role="alert"></div>
 
+<p class="small text-muted mb-1">카드를 누르면 해당 LOT 목록이 열립니다.</p>
 <div class="row g-2 mb-3" id="dash-kpis">
-    <div class="col-6 col-lg"><a class="card kpi text-decoration-none" href="#dash-actions">
+    <div class="col-6 col-lg"><a class="card kpi text-decoration-none" href="/Trace?need=waiting" title="눌러서 검사 대기 LOT 목록 보기">
         <div class="card-body py-2"><div class="small text-muted">검사 대기</div>
             <div class="fs-3" data-kpi="waiting">–</div><div class="small text-muted" data-kpi="waiting-qty"></div></div></a></div>
-    <div class="col-6 col-lg"><a class="card kpi text-decoration-none" href="#dash-delayed">
+    <div class="col-6 col-lg"><a class="card kpi text-decoration-none" href="/Trace?need=delayed" title="눌러서 검사 지연 LOT 목록 보기">
         <div class="card-body py-2"><div class="small text-muted">검사 지연 LOT (<span data-kpi="threshold">48</span>시간 초과)</div>
             <div class="fs-3" data-kpi="delayed">–</div><div class="small text-muted">의뢰 후 미검사 남음</div></div></a></div>
     <div class="col-6 col-lg"><div class="card kpi">
         <div class="card-body py-2"><div class="small text-muted" title="오늘 입력된 검사 판정 중 불합격 수량 ÷ 검사 수량. 처음 판정 기준이라 나중에 정정·재검사·폐기해도 바뀌지 않습니다.">불합격률 (오늘 · 최근 7일) <span class="help-mark" aria-hidden="true">ⓘ</span></div>
             <div class="fs-3" data-kpi="fail-today">–</div><div class="small text-muted" data-kpi="fail-7d"></div>
             <div class="small text-muted">오늘 입력한 검사 판정 기준. 폐기·재검사는 옆 카드</div></div></div></div>
-    <div class="col-6 col-lg"><a class="card kpi text-decoration-none" href="#dash-actions">
+    <div class="col-6 col-lg"><a class="card kpi text-decoration-none" href="/Trace?need=failed">
         <div class="card-body py-2"><div class="small text-muted" title="불합격 판정 뒤 아직 재검사·폐기로 정리되지 않은 수량(모든 LOT)과 오늘 처리한 수량">불합격 처리 <span class="help-mark" aria-hidden="true">ⓘ</span></div>
             <div class="fs-3" data-kpi="failed-pending">–</div><div class="small text-muted" data-kpi="failed-today"></div></div></a></div>
-    <div class="col-6 col-lg"><div class="card kpi">
+    <div class="col-6 col-lg"><a class="card kpi text-decoration-none" href="/Trace?need=shipped-today" title="눌러서 오늘 출하한 LOT 목록 보기">
         <div class="card-body py-2"><div class="small text-muted" title="오늘(한국 날짜) 출하 실적 합계">당일 출하</div>
-            <div class="fs-3" data-kpi="shipped">–</div><div class="small text-muted" data-kpi="shipped-count"></div></div></div></div>
+            <div class="fs-3" data-kpi="shipped">–</div><div class="small text-muted" data-kpi="shipped-count"></div></div></a></div>
 </div>
 
 <div class="row g-3">

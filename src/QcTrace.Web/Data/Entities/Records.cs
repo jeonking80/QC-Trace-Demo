@@ -134,3 +134,30 @@ public class DelayAlert
     public int UninspectedAtDetection { get; set; }
     public DateTime DetectedAt { get; set; }
 }
+
+public static class ScheduleEventKind
+{
+    public const string Request = "Request";   // 의뢰 때 긴급·희망 기한 지정(생산 담당)
+    public const string Propose = "Propose";   // 잔량 완료 예정일 회신(검사자)
+    public const string Accept = "Accept";     // 회신 수락(생산 담당)
+    public const string Reject = "Reject";     // 회신 거절 → 결정권자에게 넘어감(생산 담당)
+    public const string Decide = "Decide";     // 최종 기한 결정(관리자 또는 승인권자)
+    public static readonly string[] All = [Request, Propose, Accept, Reject, Decide];
+}
+
+/// <summary>
+/// 검사 일정 협의 기록(추가만). 수량은 바꾸지 않으므로 수량 원장(Ledger)과 따로 둔다.
+/// 의뢰(긴급·희망 기한) → 검사자 회신(예정일·사유) → 생산 담당 수락/거절 → 거절이면 결정권자 결정.
+/// SP(usp_RequestInspection, usp_ProposeSchedule, usp_RespondSchedule, usp_DecideSchedule)만 쓴다.
+/// </summary>
+public class ScheduleEvent
+{
+    public long Id { get; set; }
+    public int LotId { get; set; }
+    public string Kind { get; set; } = "";
+    public string? Priority { get; set; }
+    public DateTime? DueAt { get; set; }
+    public string? Reason { get; set; }
+    public string ActorId { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+}

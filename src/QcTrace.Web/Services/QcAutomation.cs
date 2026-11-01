@@ -86,7 +86,7 @@ public sealed class QcAutomation(IServiceScopeFactory scopes, ReportStorage stor
                     VALUES ({d.LotId}, {d.RequestedAt}, {d.Uninspected}, {now})
                     """, ct);
                 added++;
-                logger.LogWarning("검사 지연 알림: {LotNo} 의뢰 후 {Hours}시간, 미검사 {Qty}개", d.LotNo, d.Hours, d.Uninspected);
+                logger.LogWarning("검사 지연 알림: {LotNo} {Detail}, 미검사 {Qty}개", d.LotNo, d.Describe(now), d.Uninspected);
             }
             catch (SqlException ex) when (ex.Number is 2601 or 2627)
             {

@@ -1,0 +1,80 @@
+@page
+@model QcTrace.Web.Pages.Schedule.IndexModel
+@using QcTrace.Web.Services
+@{
+    ViewData["Title"] = "검사 일정 결정";
+}
+
+<h1 class="h3">검사 일정 결정</h1>
+<p class="text-muted small">
+    흐름: 생산 담당이 검사 의뢰(긴급·희망 기한) → 검사자가 남은 미검사의 완료 예정 시각과 사유를 회신 → 생산 담당이 수락 또는 거절.
+    <strong>거절된 회신, 그리고 이미 확정한 기한을 바꾸는 회신(생산 담당이 수락해도)은 여기로 와서 관리자 또는 승인권자가 최종 기한을 정합니다.</strong> 정한 기한은 검사자 목록 순서와 지연 판단에 쓰입니다.
+</p>
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+<h2 class="h5 mt-3">결정 대기 <span class="badge bg-info text-dark">@Model.ToDecide.Count</span></h2>
+@foreach (var p in Model.ToDecide)
+{
+    <div class="card mb-3 decide-card">
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2 align-items-center mb-1">
+                <strong><partial name="_LotLink" model="p.Lot.LotNo" /></strong>
+                <span class="text-muted small">@p.Lot.Item.ItemCode @p.Lot.Item.Name</span>
+                <span class="small"><partial name="_QtyBadges" model="p.Lot.Quantity" /></span>
+            </div>
+            <partial name="_ScheduleBadges" model="p.Lot" />
+            <partial name="_ScheduleHistory" model="p.History" />
+            <form method="post" asp-page-handler="Decide" class="row g-2 align-items-end">
+                <input type="hidden" name="lotId" value="@p.Lot.Id" />
+                <input type="hidden" name="requestKey" value="@QcTrace.Web.Pages.QcPageModel.NewRequestKey()" />
+                <div class="col-md-3">
+                    <label class="form-label small mb-0">최종 기한</label>
+                    <input class="form-control form-control-sm" type="datetime-local" name="dueAt" required
+                           value="@Kst.InputValue(p.Lot.ProposedDueAt ?? DateTime.UtcNow.AddDays(1))" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small mb-0">결정 사유 (필수)</label>
+                    <input class="form-control form-control-sm" name="reason" required maxlength="500" placeholder="예: 납기 고려해 내일 12시로 확정" />
+                </div>
+                <div class="col-md-3"><button type="submit" class="btn btn-sm btn-primary w-100">최종 기한 확정</button></div>
+            </form>
+        </div>
+    </div>
+}
+@if (Model.ToDecide.Count == 0) { <p class="text-muted">결정을 기다리는 일정이 없습니다.</p> }
+
+<h2 class="h5 mt-4">기한 초과 LOT <span class="text-muted small">(보고용)</span></h2>
+<table class="table table-sm" id="overdue-lots">
+    <thead><tr><th>LOT</th><th>품목</th><th>남은 미검사</th><th>기한</th></tr></thead>
+    <tbody>
+    @foreach (var lot in Model.Overdue)
+    {
+        <tr>
+            <td><partial name="_LotLink" model="lot.LotNo" /></td>
+            <td>@lot.Item.ItemCode</td>
+            <td>@lot.Quantity!.Uninspected / @lot.ProducedQty</td>
+            <td><partial name="_ScheduleBadges" model="lot" /></td>
+        </tr>
+    }
+    @if (Model.Overdue.Count == 0) { <tr><td colspan="4" class="text-muted">기한을 넘긴 LOT이 없습니다.</td></tr> }
+    </tbody>
+</table>
+
+<h2 class="h5 mt-4">최근 일정 협의 <span class="text-muted small">(최근 30건)</span></h2>
+<table class="table table-sm" id="schedule-recent">
+    <thead><tr><th>시각</th><th>LOT</th><th>단계</th><th>기한</th><th>작업자</th><th>사유</th></tr></thead>
+    <tbody>
+    @foreach (var (lotNo, e) in Model.Recent)
+    {
+        <tr>
+            <td class="text-nowrap">@Kst.Format(e.CreatedAt)</td>
+            <td><partial name="_LotLink" model="lotNo" /></td>
+            <td>@Schedule.EventLabel(e.Kind)@(e.Priority == "Urgent" ? " · 긴급" : "")</td>
+            <td class="text-nowrap">@Kst.Format(e.DueAt)</td>
+            <td>@e.Actor</td>
+            <td>@e.Reason</td>
+        </tr>
+    }
+    @if (Model.Recent.Count == 0) { <tr><td colspan="6" class="text-muted">기록이 없습니다.</td></tr> }
+    </tbody>
+</table>

@@ -265,9 +265,34 @@ FROM dbo.Lots lt
 LEFT JOIN dbo.Ledger g ON g.LotId = lt.Id
 GROUP BY lt.Id;
 
+/* 6-1. 검사 일정 예시 (최근 의뢰 LOT 22~24, 화면의 SP와 같은 모양)
+   - 24: 긴급 의뢰(사유), 희망 기한 = 의뢰 + 24시간
+   - 23: 희망 기한 = 의뢰 + 36시간, 검사자 회신(완료 예정 + 사유) → 생산 담당 확인 대기
+   - 22: 희망 기한 = 의뢰 + 24시간(이미 지남 → 지연), 검사자 회신 → 생산 담당 거절 → 결정권자 결정 대기 */
+DECLARE @lot22 int = (SELECT LotId FROM #Lot WHERE N = 22),
+        @lot23 int = (SELECT LotId FROM #Lot WHERE N = 23),
+        @lot24 int = (SELECT LotId FROM #Lot WHERE N = 24);
+
+UPDATE dbo.Lots SET Priority = N'Urgent', PriorityReason = N'고객사 납기 하루 당김', DueAt = DATEADD(HOUR, 24, InspectionRequestedAt) WHERE Id = @lot24;
+UPDATE dbo.Lots SET DueAt = DATEADD(HOUR, 36, InspectionRequestedAt) WHERE Id = @lot23;
+UPDATE dbo.Lots SET DueAt = DATEADD(HOUR, 24, InspectionRequestedAt) WHERE Id = @lot22;
+
+INSERT INTO dbo.ScheduleEvents (LotId, Kind, Priority, DueAt, Reason, ActorId, CreatedAt)
+SELECT Id, N'Request', Priority, DueAt, PriorityReason, CreatedById, InspectionRequestedAt
+FROM dbo.Lots WHERE Id IN (@lot22, @lot23, @lot24);
+
+UPDATE dbo.Lots SET ScheduleState = N'Proposed', ProposedDueAt = DATEADD(HOUR, 30, @now) WHERE Id = @lot23;
+INSERT INTO dbo.ScheduleEvents (LotId, Kind, DueAt, Reason, ActorId, CreatedAt)
+VALUES (@lot23, N'Propose', DATEADD(HOUR, 30, @now), N'측정 지그 교정 중, 모레 오전에 나머지 검사', @inspector1, DATEADD(HOUR, -2, @now));
+
+UPDATE dbo.Lots SET ScheduleState = N'Escalated', ProposedDueAt = DATEADD(HOUR, 20, @now) WHERE Id = @lot22;
+INSERT INTO dbo.ScheduleEvents (LotId, Kind, DueAt, Reason, ActorId, CreatedAt)
+VALUES (@lot22, N'Propose', DATEADD(HOUR, 20, @now), N'외경 측정기 고장, 수리 후 내일 검사', @inspector2, DATEADD(HOUR, -5, @now)),
+       (@lot22, N'Reject',  DATEADD(HOUR, 20, @now), N'출하 일정상 오늘 안에 검사가 필요', @producer, DATEADD(HOUR, -4, @now));
+
 /* 7. 검사 의뢰 원장 (R10). 화면의 검사 의뢰(usp_RequestInspection)와 같은 모양: 수량 변화 없음(Delta 0) */
 INSERT INTO dbo.Ledger (LotId, Kind, DeltaField, Delta, ActorId, Reason, SourceTable, SourceId, CreatedAt)
-SELECT lt.Id, N'Request', N'Uninspected', 0, lt.CreatedById, N'검사 의뢰', N'Lots', lt.Id, lt.InspectionRequestedAt
+SELECT lt.Id, N'Request', N'Uninspected', 0, lt.CreatedById, IIF(lt.Priority = N'Urgent', N'검사 의뢰 (긴급)', N'검사 의뢰'), N'Lots', lt.Id, lt.InspectionRequestedAt
 FROM dbo.Lots lt
 WHERE lt.InspectionRequestedAt IS NOT NULL;
 

@@ -14,6 +14,8 @@ public static class Policies
     public const string Approver = "ApproverOnly";
     public const string Shipper = "ShipperOnly";
     public const string Admin = "AdminOnly";
+    /// <summary>검사 일정 최종 결정: 관리자 또는 승인권자(2026-11-01 사용자 결정)</summary>
+    public const string ScheduleDecider = "ScheduleDecider";
 
     /// <summary>Razor Pages 폴더 → 정책. 폴더 이름이 곧 화면 묶음이다.</summary>
     public static readonly (string Folder, string Policy)[] PageFolders =
@@ -23,7 +25,8 @@ public static class Policies
         ("/Approvals", Approver),
         ("/Shipments", Shipper),
         ("/Admin", Admin),
-        ("/Trace", AnyRole),   // LOT 조회·상세: 역할이 있는 사용자 누구나(집 PC 피드백 B1)
+        ("/Trace", AnyRole),              // LOT 조회·상세: 역할이 있는 사용자 누구나(집 PC 피드백 B1)
+        ("/Schedule", ScheduleDecider),   // 거절된 검사 일정의 최종 기한 결정
     ];
 
     public static void Configure(Microsoft.AspNetCore.Authorization.AuthorizationOptions options)
@@ -34,6 +37,7 @@ public static class Policies
         options.AddPolicy(Approver, p => p.RequireRole(Roles.Approver));
         options.AddPolicy(Shipper, p => p.RequireRole(Roles.Shipper));
         options.AddPolicy(Admin, p => p.RequireRole(Roles.Admin));
+        options.AddPolicy(ScheduleDecider, p => p.RequireRole(Roles.Admin, Roles.Approver));
 
         // 명시하지 않은 엔드포인트는 로그인을 요구한다. 익명 허용은 [AllowAnonymous]로만 연다.
         options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()

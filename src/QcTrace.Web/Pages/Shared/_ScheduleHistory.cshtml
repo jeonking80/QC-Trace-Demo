@@ -1,0 +1,23 @@
+@model List<QcTrace.Web.Services.Schedule.HistoryRow>
+@using QcTrace.Web.Services
+@* 검사 일정 협의 기록(추가만, ScheduleEvents). 오래된 순 *@
+<table class="table table-sm schedule-history">
+    <thead><tr><th>시각</th><th>단계</th><th>기한</th><th>작업자</th><th>사유</th></tr></thead>
+    <tbody>
+    @{ var decided = false; }
+    @foreach (var e in Model)
+    {
+        @* 결정권자가 기한을 정한 뒤의 수락은 기한을 바로 바꾸지 않고 결정권자 확인으로 간다 *@
+        var label = e.Kind == "Accept" && decided ? "회신 수락 → 결정권자 확인" : Schedule.EventLabel(e.Kind);
+        if (e.Kind == "Decide") { decided = true; }
+        <tr>
+            <td class="text-nowrap">@Kst.Format(e.CreatedAt)</td>
+            <td>@label@(e.Priority == "Urgent" ? " · 긴급" : "")</td>
+            <td class="text-nowrap">@Kst.Format(e.DueAt)</td>
+            <td>@e.Actor</td>
+            <td>@e.Reason</td>
+        </tr>
+    }
+    @if (Model.Count == 0) { <tr><td colspan="5" class="text-muted">일정 협의 기록이 없습니다.</td></tr> }
+    </tbody>
+</table>

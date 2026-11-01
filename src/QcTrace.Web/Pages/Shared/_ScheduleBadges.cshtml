@@ -1,0 +1,22 @@
+@model QcTrace.Web.Data.Entities.Lot
+@using QcTrace.Web.Services
+@* 긴급·기한·일정 회신 단계 배지(검사 일정, 2026-11-01 사용자 요청). 미검사가 없으면 기한은 보이지 않는다. *@
+@{
+    var now = DateTime.UtcNow;
+    var open = Model.Quantity is null || Model.Quantity.Uninspected > 0;
+}
+<div class="schedule-badges">
+    @if (Model.Priority == QcTrace.Web.Data.Entities.LotPriority.Urgent)
+    {
+        <span class="badge bg-danger" title="@Model.PriorityReason">긴급</span>
+        @if (!string.IsNullOrEmpty(Model.PriorityReason)) { <span class="small text-danger">@Model.PriorityReason</span> }
+    }
+    @if (Model.DueAt is { } due && open)
+    {
+        <span class="badge @Schedule.DueCss(due, now)" title="검사 기한 @Kst.Format(due)">기한 @Kst.Format(due)[5..] · @Schedule.Remaining(due, now)</span>
+    }
+    @if (Model.ScheduleState is { } state && open)
+    {
+        <span class="badge @(state is "Proposed" or "Escalated" ? "bg-info text-dark" : "bg-light text-dark border")">@Schedule.StateLabel(state)@(Model.ProposedDueAt is { } p && state is "Proposed" or "Escalated" ? " · 회신 " + Kst.Format(p)[5..] : "")</span>
+    }
+</div>

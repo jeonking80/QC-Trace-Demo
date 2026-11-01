@@ -19,10 +19,11 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        @* 메뉴는 역할에 맞는 것만 보인다. 실제 접근 제한은 서버 정책(Auth/Policies.cs)이 한다. *@
+                        @* 메뉴는 역할에 맞는 것만 보인다. 실제 접근 제한은 서버 정책(Auth/Policies.cs)이 한다.
+                           "LOT 조회"는 생산 담당만 가진 사용자에게는 숨긴다: LOT 화면에 같은 검색이 있다(2026-11-01 사용자 결정, 접근은 여전히 가능). *@
                         @foreach (var (path, label, role) in Menu)
                         {
-                            if (role == "*" ? QcTrace.Web.Data.Seed.Roles.All.Any(User.IsInRole) : User.IsInRole(role))
+                            if (role == "*" ? QcTrace.Web.Data.Seed.Roles.All.Where(r => r != QcTrace.Web.Data.Seed.Roles.Producer).Any(User.IsInRole) : role.Split(',').Any(User.IsInRole))
                             {
                                 <li class="nav-item"><a class="nav-link text-dark" href="@path">@label</a></li>
                             }
@@ -72,6 +73,7 @@
         ("/Inspections", "검사", QcTrace.Web.Data.Seed.Roles.Inspector),
         ("/Approvals", "출하 승인", QcTrace.Web.Data.Seed.Roles.Approver),
         ("/Shipments", "출하", QcTrace.Web.Data.Seed.Roles.Shipper),
+        ("/Schedule", "일정 결정", QcTrace.Web.Data.Seed.Roles.Admin + "," + QcTrace.Web.Data.Seed.Roles.Approver),
         ("/Trace", "LOT 조회", "*"),
     ];
 }

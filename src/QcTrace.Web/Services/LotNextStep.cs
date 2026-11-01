@@ -18,6 +18,11 @@ public static class LotNextStep
         _ => role,
     };
 
+    /// <summary>검사 일정 최종 결정권자(쉼표로 여러 역할)</summary>
+    public const string Deciders = Roles.Admin + "," + Roles.Approver;
+
+    public static bool Can(System.Security.Claims.ClaimsPrincipal user, Step step) => step.Role.Split(',').Any(user.IsInRole);
+
     public static List<Step> For(Lot lot, LotQuantity? q)
     {
         var steps = new List<Step>();
@@ -28,7 +33,17 @@ public static class LotNextStep
         }
         if (q is null) return steps;
         if (q.Uninspected > 0)
-            steps.Add(new(Roles.Inspector, RoleLabel(Roles.Inspector), $"남은 미검사 {q.Uninspected}개를 검사합니다.", $"/Inspections/Input/{lot.Id}"));
+        {
+            var due = lot.DueAt is { } d ? $" 기한 {Kst.Format(d)} ({Schedule.Remaining(d, DateTime.UtcNow)})." : "";
+            var urgent = lot.Priority == Data.Entities.LotPriority.Urgent ? "[긴급] " : "";
+            steps.Add(new(Roles.Inspector, RoleLabel(Roles.Inspector), $"{urgent}남은 미검사 {q.Uninspected}개를 검사합니다.{due}", $"/Inspections/Input/{lot.Id}"));
+            if (lot.ScheduleState == ScheduleState.Proposed)
+                steps.Add(new(Roles.Producer, RoleLabel(Roles.Producer),
+                    $"검사자가 보낸 일정 회신({Kst.Format(lot.ProposedDueAt)}까지)을 수락하거나 거절합니다.", "/Lots"));
+            if (lot.ScheduleState == ScheduleState.Escalated)
+                steps.Add(new(Deciders, "관리자·승인권자",
+                    $"검사자 일정 회신({Kst.Format(lot.ProposedDueAt)}까지)이 결정권자 확인을 기다립니다(생산 담당 거절 또는 확정 기한 변경). 최종 기한을 정합니다.", "/Schedule"));
+        }
         if (q.Failed > 0)
             steps.Add(new(Roles.Inspector, RoleLabel(Roles.Inspector), $"불합격 {q.Failed}개를 재검사 또는 폐기로 처리합니다(사유 필수).", $"/Inspections/Dispose/{lot.Id}"));
         if (q.Held > 0)

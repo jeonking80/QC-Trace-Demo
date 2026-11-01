@@ -21,8 +21,25 @@ public sealed class QcCommands(IConfiguration configuration)
             ("@RequestKey", requestKey), ("@ProducerId", producerId), ("@ItemId", itemId), ("@ProducedQty", producedQty),
             ("@ProducedOn", producedOn.ToDateTime(TimeOnly.MinValue)), ("@Shift", shift));
 
-    public Task<CommandResult> RequestInspectionAsync(string requestKey, int lotId, string producerId) =>
-        ExecAsync("dbo.usp_RequestInspection", ("@RequestKey", requestKey), ("@LotId", lotId), ("@ProducerId", producerId));
+    public Task<CommandResult> RequestInspectionAsync(string requestKey, int lotId, string producerId,
+        string priority = "Normal", string? priorityReason = null, DateTime? dueAtUtc = null) =>
+        ExecAsync("dbo.usp_RequestInspection", ("@RequestKey", requestKey), ("@LotId", lotId), ("@ProducerId", producerId),
+            ("@Priority", priority), ("@PriorityReason", priorityReason), ("@DueAt", dueAtUtc));
+
+    /// <summary>검사자: 남은 미검사의 완료 예정 시각(UTC)과 사유 회신</summary>
+    public Task<CommandResult> ProposeScheduleAsync(string requestKey, int lotId, string inspectorId, DateTime dueAtUtc, string? reason) =>
+        ExecAsync("dbo.usp_ProposeSchedule", ("@RequestKey", requestKey), ("@LotId", lotId), ("@InspectorId", inspectorId),
+            ("@DueAt", dueAtUtc), ("@Reason", reason));
+
+    /// <summary>생산 담당: 회신 수락(Accept) 또는 거절(Reject, 사유 필수 → 결정권자에게)</summary>
+    public Task<CommandResult> RespondScheduleAsync(string requestKey, int lotId, string producerId, string decision, string? reason) =>
+        ExecAsync("dbo.usp_RespondSchedule", ("@RequestKey", requestKey), ("@LotId", lotId), ("@ProducerId", producerId),
+            ("@Decision", decision), ("@Reason", reason));
+
+    /// <summary>결정권자(관리자·승인권자): 거절된 일정의 최종 기한(UTC)</summary>
+    public Task<CommandResult> DecideScheduleAsync(string requestKey, int lotId, string deciderId, DateTime dueAtUtc, string? reason) =>
+        ExecAsync("dbo.usp_DecideSchedule", ("@RequestKey", requestKey), ("@LotId", lotId), ("@DeciderId", deciderId),
+            ("@DueAt", dueAtUtc), ("@Reason", reason));
 
     public Task<CommandResult> ApplyInspectionAsync(string requestKey, int lotId, string inspectorId, int qty, string verdict,
         string? measuredJson, string? reason, long? correctsInspectionId = null) =>

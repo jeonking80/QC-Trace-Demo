@@ -1,0 +1,43 @@
+@page "{lotId:int}"
+@model QcTrace.Web.Pages.Inspections.ScheduleModel
+@using QcTrace.Web.Services
+@{
+    ViewData["Title"] = "검사 일정 회신";
+}
+
+<h1 class="h3">검사 일정 회신 <small><partial name="_LotLink" model="Model.Lot.LotNo" /></small></h1>
+<p class="small mb-1"><partial name="_QtyBadges" model="Model.Lot.Quantity" /></p>
+<partial name="_ScheduleBadges" model="Model.Lot" />
+<p class="text-muted small mt-2">
+    남은 미검사를 언제까지 검사할지 생산 담당에게 알립니다. 생산 담당이 <strong>수락</strong>하면 그 시각이 검사 기한이 되고,
+    <strong>거절</strong>하면 결정권자(관리자·승인권자)가 최종 기한을 정합니다. 기록은 지우거나 고칠 수 없습니다.
+</p>
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+@if (Model.CanPropose)
+{
+    <form method="post" class="row g-2 align-items-end mb-4" id="propose-form">
+        <input type="hidden" asp-for="RequestKey" />
+        <div class="col-md-3">
+            <label class="form-label" for="DueAt">완료 예정 시각</label>
+            <input class="form-control" type="datetime-local" id="DueAt" name="DueAt" required
+                   value="@(Model.DueAt?.ToString("yyyy-MM-ddTHH:mm") ?? Kst.InputValue(DateTime.UtcNow.AddDays(1)))" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label" for="Reason">사유 (필수)</label>
+            <input class="form-control" id="Reason" name="Reason" value="@Model.Reason" required maxlength="500" placeholder="예: 측정 지그 교정 중, 내일 오전 재개" />
+        </div>
+        <div class="col-md-3"><button type="submit" class="btn btn-primary w-100">회신 보내기</button></div>
+    </form>
+}
+else
+{
+    <div class="alert alert-secondary small">
+        @if (Model.Lot.ScheduleState is "Proposed") { <text>이미 보낸 회신을 생산 담당이 확인하고 있습니다.</text> }
+        else if (Model.Lot.ScheduleState is "Escalated") { <text>생산 담당이 거절해 결정권자의 결정을 기다리고 있습니다.</text> }
+        else { <text>미검사가 남은 의뢰 LOT만 일정을 회신할 수 있습니다.</text> }
+    </div>
+}
+
+<h2 class="h5">일정 협의 기록</h2>
+<partial name="_ScheduleHistory" model="Model.History" />

@@ -9,9 +9,9 @@
 <partial name="_FlowGuide" model="@("inspect")" />
 <partial name="_StatusMessage" model="Model.StatusMessage" />
 
-<h2 class="h5 mt-3">검사할 LOT <span class="text-muted small">(의뢰가 오래된 순, 48시간 초과는 노란색)</span></h2>
-<table class="table table-sm">
-    <thead><tr><th>LOT</th><th>품목</th><th>상태</th><th>남은 미검사</th><th>의뢰 시각</th><th></th></tr></thead>
+<h2 class="h5 mt-3">검사할 LOT <span class="text-muted small">(긴급 → 기한 빠른 순 → 의뢰 오래된 순. 기한이 지났거나 기한 없이 48시간 넘으면 노란색)</span></h2>
+<table class="table table-sm" id="to-inspect">
+    <thead><tr><th>LOT</th><th>품목</th><th>상태</th><th>남은 미검사</th><th>의뢰·기한</th><th></th></tr></thead>
     <tbody>
     @foreach (var lot in Model.ToInspect)
     {
@@ -20,8 +20,11 @@
             <td>@lot.Item.ItemCode <span class="text-muted small">@lot.Item.Name</span></td>
             <td><partial name="_LotStatus" model="lot.Status" /></td>
             <td><strong>@lot.Quantity!.Uninspected</strong> / @lot.ProducedQty</td>
-            <td class="small">@Kst.Format(lot.InspectionRequestedAt)</td>
-            <td><a class="btn btn-sm btn-primary" asp-page="./Input" asp-route-lotId="@lot.Id">검사 입력</a></td>
+            <td class="small">의뢰 @Kst.Format(lot.InspectionRequestedAt)<partial name="_ScheduleBadges" model="lot" /></td>
+            <td class="text-nowrap">
+                <a class="btn btn-sm btn-primary" asp-page="./Input" asp-route-lotId="@lot.Id">검사 입력</a>
+                <a class="btn btn-sm btn-outline-secondary" asp-page="./Schedule" asp-route-lotId="@lot.Id">일정 회신</a>
+            </td>
         </tr>
     }
     @if (Model.ToInspect.Count == 0) { <tr><td colspan="6" class="text-muted">검사할 LOT이 없습니다.</td></tr> }

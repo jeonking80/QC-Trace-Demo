@@ -14,8 +14,16 @@
         <input class="form-control form-control-sm" id="Q" name="Q" value="@Model.Q" placeholder="일부만 입력해도 됨" />
     </div>
     <input type="hidden" name="Status" value="@Model.Status" />
+    <input type="hidden" name="Need" value="@Model.Need" />
     <div class="col-auto"><button class="btn btn-sm btn-primary">찾기</button></div>
 </form>
+@if (Model.NeedLabel is not null)
+{
+    <div class="alert alert-info py-2 d-flex justify-content-between align-items-center" id="trace-need">
+        <span>대시보드에서 고른 목록: <strong>@Model.NeedLabel</strong> · @(Model.Lots.Count)건</span>
+        <a class="btn btn-sm btn-outline-secondary" asp-page="./Index">전체 보기</a>
+    </div>
+}
 <div class="mb-2">
     @foreach (var (value, label) in filters)
     {
